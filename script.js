@@ -1,5 +1,4 @@
-// Tamamen Düzeltilmiş Script
-import * as THREE from './three.module.js';
+import * as THREE from 'three';
 
 function turkishToEnglish(text) {
     if (typeof text !== 'string') return text;
@@ -53,7 +52,7 @@ const julieScaredPhrases = ["Cok hizlisin!", "Dikkat et!", "Polisler pesimizde!"
 
 async function callGemini(prompt) {
     const isMissionPrompt = prompt.includes("görev hedefi oluştur");
-    const apiKey = ""; // API Anahtarınızı buraya girin
+    const apiKey = "";
     if (!apiKey) {
         console.warn("Gemini API anahtarı ayarlanmamış. Yedek metinler kullanılacak.");
         return isMissionPrompt ? FALLBACK_MISSIONS[Math.floor(Math.random() * FALLBACK_MISSIONS.length)] : FALLBACK_CHATTER[Math.floor(Math.random() * FALLBACK_CHATTER.length)];
@@ -92,79 +91,56 @@ function loadSounds() {
         heal_sound: new Howl({ src: ['sound/spell_heal.ogg'], volume: 0.7 })
     };
 }
-// Diğer tüm JavaScript fonksiyonları buraya gelecek...
-// (Önceki yanıtta verilen script.js içeriğinin kalanı)
-// ...
-// Bu bir kısaltmadır, tam kodu kopyaladığınızdan emin olun.
-// initializeGame, animate ve diğer tüm fonksiyonlar burada yer almalıdır.
-// ...
-// ... Script.js dosyasının tam içeriğini buraya yapıştırın ...
-// (Karakter sınırı nedeniyle tamamını tekrar eklemiyorum,
-// bir önceki yanıttaki tam script.js kodunu kullanmalısınız)
 
-// Örnek olarak kalan birkaç fonksiyon:
-function initializeGame() {
-    try {
-        clock = new THREE.Clock();
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
-        isIntroPlaying = true;
-        cinematicCameraTarget = new THREE.Vector3();
-        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        scene.background = dayCycleParameters.NIGHT.background.clone();
-        scene.fog = new THREE.Fog(dayCycleParameters.NIGHT.fog.clone(), dayCycleParameters.NIGHT.fogNear, dayCycleParameters.NIGHT.fogFar);
-        hemiLight = new THREE.HemisphereLight(dayCycleParameters.NIGHT.hemiSky, dayCycleParameters.NIGHT.hemiGround, dayCycleParameters.NIGHT.dirIntensity);
-        scene.add(hemiLight);
-        dirLight = new THREE.DirectionalLight(dayCycleParameters.NIGHT.dirLight, dayCycleParameters.NIGHT.dirIntensity);
-        dirLight.position.set(-50, 40, 20);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
-        dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100;
-        dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
-        scene.add(dirLight);
-        createWorld();
-        updateHealth();
-        camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
-        camera.lookAt(player.position);
-        setupControls();
-        areHazardLightsOn = true;
-        animate();
-        window.addEventListener('resize', onWindowResize, false);
-        document.getElementById('game').classList.add('visible');
-        setTimeout(() => { showSpeechBubble('player', 'Hmm, guzel araba... Artik benim.'); }, 1500);
-        document.getElementById('mission-container').style.display = 'none';
-        if (sounds && sounds.engine) sounds.engine.play();
-    } catch(e) {
-        displayError(e);
-    }
+function loadAssets() {
+    const loadingBar = document.getElementById('loading-bar');
+    const loadingPercentage = document.getElementById('loading-percentage');
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 2;
+        if(progress > 100) progress = 100;
+        loadingBar.style.width = progress + '%';
+        loadingPercentage.innerText = Math.round(progress) + '%';
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.opacity = '0';
+                const nameEntryScreen = document.getElementById('name-entry-screen');
+                nameEntryScreen.style.display = 'flex';
+                setTimeout(() => nameEntryScreen.classList.add('visible'), 50);
+                nameEntryScreen.addEventListener('transitionend', () => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, { once: true });
+            }, 500);
+        }
+    }, 50);
 }
 
-function animate() {
-    if (isGameOver) return;
-    requestAnimationFrame(animate);
-    const deltaTime = clock.getDelta();
-    // ... animate fonksiyonunun geri kalanı
+function setupGameStart() {
+    const startGameButton = document.getElementById('start-game-button');
+    const nameEntryScreen = document.getElementById('name-entry-screen');
+    const playerNameInput = document.getElementById('player-name-input');
+    playerNameInput.addEventListener('focus', () => {
+        if (!isRadioPlaying && sounds?.radio) {
+            sounds.radio.play();
+            isRadioPlaying = true;
+        }
+    }, { once: true });
+    startGameButton.addEventListener('click', () => {
+        if (isRadioPlaying && sounds?.radio) {
+            sounds.radio.fade(MENU_VOLUME, RADIO_VOL_MAX, 1000);
+        }
+        nameEntryScreen.classList.remove('visible');
+        setTimeout(() => {
+            nameEntryScreen.style.display = 'none';
+            initializeGame();
+        }, 1000);
+    });
 }
 
-
-window.addEventListener('DOMContentLoaded', () => {
-    // Howler.js script'ini dinamik olarak yükle
-    const script = document.createElement('script');
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js";
-    script.onload = () => {
-        console.log("Howler.js yüklendi.");
-        loadSounds();
-        loadAssets();
-        setupGameStart();
-    };
-    script.onerror = () => {
-        console.error("Howler.js yüklenemedi.");
-        displayError({name: "Network Error", message: "Howler.js kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin."});
-    };
-    document.head.appendChild(script);
-});
-// (Not: script.js'nin geri kalanını önceki yanıttan eksiksiz olarak kopyalamanız gerekmektedir.)
-// Buraya sadece bir özet eklenmiştir.
+function onWindowResize() { if (camera) { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); } if (renderer) { renderer.setSize(window.innerWidth, window.innerHeight); } }
+function createWorld() { createRoadAndSidewalks(); createRoadLines(); createStreetLights(); createPlayer(); createRain(); createScenery(); }
+function createPlayer() { player = new THREE.Group(); const bodyCanvas = document.createElement('canvas'); bodyCanvas.width = 256; bodyCanvas.height = 256; const bodyCtx = bodyCanvas.getContext('2d'); bodyCtx.fillStyle = '#D40000'; bodyCtx.fillRect(0, 0, 256, 256); bodyCtx.fillStyle = 'rgba(255, 255, 255, 0.8)'; bodyCtx.fillRect(108, 0, 40, 256); const bodyTexture = new THREE.CanvasTexture(bodyCanvas); const windowCanvas = document.createElement('canvas'); windowCanvas.width = 64; windowCanvas.height = 64; const windowCtx = windowCanvas.getContext('2d'); const gradient = windowCtx.createLinearGradient(0, 0, 0, 64); gradient.addColorStop(0, '#333'); gradient.addColorStop(1, '#666'); windowCtx.fillStyle = gradient; windowCtx.fillRect(0, 0, 64, 64); const windowTexture = new THREE.CanvasTexture(windowCanvas); const bodyMaterial = new THREE.MeshPhongMaterial({ map: bodyTexture, flatShading: true }); const secondaryMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true }); const windowMaterial = new THREE.MeshPhongMaterial({ map: windowTexture, transparent: true, opacity: 0.8, flatShading: true }); const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.5 }); const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.8 }); const mainBody = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.6, 6.0), bodyMaterial); mainBody.position.y = 0.6; mainBody.castShadow = true; player.add(mainBody); const frontHood = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 2.0), bodyMaterial); frontHood.position.set(0, 0.7, -3.0); player.add(frontHood); const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 2.5), bodyMaterial); cabin.position.set(0, 1.0, 0.5); player.add(cabin); const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), windowMaterial); windshield.position.set(0, 1.2, -0.7); player.add(windshield); const rearWindow = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), windowMaterial); rearWindow.position.set(0, 1.2, 1.7); player.add(rearWindow); const rearDeck = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 2.0), bodyMaterial); rearDeck.position.set(0, 0.7, 3.0); player.add(rearDeck); const spoiler = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.6), secondaryMaterial); spoiler.position.set(0, 1.0, 4.2); player.add(spoiler); const diffuser = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 0.2), secondaryMaterial); diffuser.position.set(0, 0.2, 3.0); player.add(diffuser); const headlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), lightMaterial); headlight1.position.set(-1.2, 0.6, -3.01); const headlight2 = headlight1.clone(); headlight2.position.x = 1.2; player.add(headlight1, headlight2); const taillight1 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, 0.1), taillightMaterial); taillight1.position.set(-0.6, 0.6, 4.01); const taillight2 = taillight1.clone(); taillight2.position.x = 0.6; player.add(taillight1, taillight2); const wheelGeom = new THREE.CylinderGeometry(0.5, 0.5, 0.5, 16); const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true }); const createWheel = () => { const w = new THREE.Mesh(wheelGeom, wheelMaterial); w.rotation.z = Math.PI / 2; return w; }; const wFL = createWheel(); wFL.position.set(-1.6, 0.5, -2.0); const wFR = createWheel(); wFR.position.set(1.6, 0.5, -2.0); const wBL = createWheel(); wBL.position.set(-1.6, 0.5, 2.0); const wBR = createWheel(); wBR.position.set(1.6, 0.5, 2.0); player.add(wFL, wFR, wBL, wBR); player.position.set(ROAD_WIDTH / 2 - 2, 0, 5); player.rotation.y = -Math.PI / 16; player.userData.lights = {headlight1, headlight2, taillight1, taillight2}; player.userData.isJumping = false; player.userData.verticalVelocity = 0; scene.add(player); }
+function createPoliceCar() { if (policeCar) return; policeCar = new THREE.Group(); const policeTexture = createPoliceCarTexture(); const bodyMaterial = new THREE.MeshPhongMaterial({ map: policeTexture, flatShading: true }); const blackTrimMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true }); const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, transparent: true, opacity: 0.7 }); const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xbb0000, emissive: 0xbb0000, emissiveIntensity: 1.5 }); const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 5.4), bodyMaterial); mainBody.position.y = 0.7; policeCar.add(mainBody); const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.6, 2.5), bodyMaterial); cabin.position.set(0, 1.3, -0.3); policeCar.add(cabin); const windshield = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.65), windowMaterial); windshield.position.set(0, 1.3, -1.55); windshield.rotation.x = -Math.PI / 8; policeCar.add(windshield); const rearWindow = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.65), windowMaterial); rearWindow.position.set(0, 1.3, 0.95); rearWindow.rotation.x = Math.PI / 9; policeCar.add(rearWindow); const hood = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 2.0), bodyMaterial); hood.position.set(0, 0.65, -2.2); policeCar.add(hood); const trunk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.4, 1.5), bodyMaterial); trunk.position.set(0, 0.6, 2.0); policeCar.add(trunk); const taillightGeo = new THREE.BoxGeometry(1.2, 0.35, 0.1); const leftTaillight = new THREE.Mesh(taillightGeo, taillightMaterial); leftTaillight.position.set(-0.65, 0.7, 2.75); policeCar.add(leftTaillight); const rightTaillight = new THREE.Mesh(taillightGeo, taillightMaterial); rightTaillight.position.set(0.65, 0.7, 2.75); policeCar.add(rightTaillight); const sirenBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.5), blackTrimMaterial); sirenBase.position.set(0, 1.6, -0.3); policeCar.add(sirenBase); const sirenLightGeo = new THREE.BoxGeometry(0.5, 0.25, 0.5); sirenLightRed = new THREE.Mesh(sirenLightGeo, new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 })); sirenLightRed.position.set(-0.3, 1.7, -0.3); policeCar.add(sirenLightRed); sirenLightBlue = new THREE.Mesh(sirenLightGeo, new THREE.MeshStandardMaterial({ color: 0x0000ff, emissive: 0x0000ff, emissiveIntensity: 0 })); sirenLightBlue.position.set(0.3, 1.7, -0.3); policeCar.add(sirenLightBlue); const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16); const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true }); const createWheel = () => { const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial); wheel.rotation.z = Math.PI / 2; return wheel; }; const wFL = createWheel(); wFL.position.set(-1.3, 0.4, -1.6); const wFR = createWheel(); wFR.position.set(1.3, 0.4, -1.6); const wBL = createWheel(); wBL.position.set(-1.3, 0.4, 1.8); const wBR = createWheel(); wBR.position.set(1.3, 0.4, 1.8); policeCar.add(wFL, wFR, wBL, wBR); const policeHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 })); policeHeadlight1.position.set(-1.0, 0.7, -2.51); const policeHeadlight2 = policeHeadlight1.clone(); policeHeadlight2.position.x = 1.0; policeCar.add(policeHeadlight1, policeHeadlight2); policeCar.position.set(player.position.x, 0, player.position.z + 50); policeCar.rotation.y = Math.PI; policeCar.userData.health = 100; policeCar.userData.aiState = 'following'; policeCar.userData.aiTimer = Math.random() * 3 + 4; policeCar.userData.lights = { headlight1: policeHeadlight1, headlight2: policeHeadlight2, taillight1: leftTaillight, taillight2: rightTaillight }; scene.add(policeCar); }
+function createPedestrianTexture(config) { const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 128; const ctx = canvas.getContext('2d'); ctx.fillStyle = config.skinColor; ctx.fillRect(22, 0, 20, 20); ctx.fillRect(12, 20, 40, 50); ctx.fillRect(12, 70, 18, 58); ctx.fillRect(34, 70, 18, 58); ctx.fillStyle = '#222'; ctx.fillRect(22, 0, 20, 8); ctx.fillStyle = new THREE.Color(config.shirtColor).getStyle(); ctx.fillRect(12, 22, 40, 35); ctx.fillStyle = new THREE.Color(config.pantsColor).getStyle(); ctx.fillRect(12, 70, 40, 40); return new THREE.CanvasTexture(canvas); }
+function createPedestrian(isJulie = false) { const config = { skinColor: isJulie ? '#f5cba7' : PEDESTRIAN_SKIN_COLORS[Math.floor(Math.random() * PEDESTRIAN_SKIN_COLORS.length)], shirtColor: isJulie ? 0xf721d4 : PEDESTRIAN_SHIRT_COLORS[Math.floor(Math.random() * PEDESTRIAN_SHIRT_COLORS.length)], pantsColor: isJulie ? 0x111111 : PEDESTRIAN_PANTS_COLO
