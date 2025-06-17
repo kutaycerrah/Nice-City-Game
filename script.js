@@ -136,7 +136,7 @@ function displayError(e) {
     const errorDisplay = document.getElementById('error-display');
     if (errorDisplay) {
         errorDisplay.style.display = 'block';
-        errorDisplay.innerHTML = `<h1>OYUN HATASI!</h1><p>Uzgunuz, oyunda beklenmedik bir hata olustu.</p><p><strong>Hata Adi:</strong> ${e.name}</p><p><strong>Mesaj:</strong> <span class="math-inline">\{e\.message\}</p\><hr\><p\><strong\>Teknik Detay \(Stack Trace\)\:</strong\></p\><pre\></span>{e.stack}</pre>`;
+        errorDisplay.innerHTML = `<h1>OYUN HATASI!</h1><p>Uzgunuz, oyunda beklenmedik bir hata olustu.</p><p><strong>Hata Adi:</strong> ${e.name}</p><p><strong>Mesaj:</strong> ${e.message}</p><hr><p><strong>Teknik Detay (Stack Trace):</strong></p><pre>${e.stack}</pre>`;
     }
 }
 
@@ -151,13 +151,11 @@ function loadSounds() {
     }
 }
 
-// loadGameTextures fonksiyonu artık kaldırıldı, çünkü dışarıdan doku yüklenmeyecek.
-// function loadGameTextures(callback) { ... }
+// loadGameTextures fonksiyonu kaldırıldı, çünkü dışarıdan doku yüklenmeyecek.
 
 
 function loadAssets() {
     // Bu fonksiyonu, oyun başlatma sürecinin görsel ilerlemesini göstermek için kullanabilirsiniz.
-    // Dokular artık senkron olarak oluşturulduğu için, asenkron yükleme adımı basitleştirilebilir.
     const loadingBar = document.getElementById('loading-bar');
     const loadingPercentage = document.getElementById('loading-percentage');
     let progress = 0;
@@ -221,35 +219,43 @@ function createWorld() {
     createScenery(); 
 }
 
+// Oyuncu araba gövdesi için CanvasTexture oluşturma
+function createPlayerCarBodyTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#D40000'; // Kırmızı araba
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Beyaz şerit
+    ctx.fillRect(108, 0, 40, 256);
+    return new THREE.CanvasTexture(canvas);
+}
+
+// Oyuncu araba camları için CanvasTexture oluşturma
+function createPlayerCarWindowTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 64);
+    gradient.addColorStop(0, '#333');
+    gradient.addColorStop(1, '#666');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(canvas);
+}
+
 function createPlayer() {
     player = new THREE.Group();
 
     // CanvasTexture ile oyuncu araba gövdesi dokusu
-    const bodyCanvas = document.createElement('canvas');
-    bodyCanvas.width = 256; bodyCanvas.height = 256;
-    const bodyCtx = bodyCanvas.getContext('2d');
-    bodyCtx.fillStyle = '#D40000'; // Kırmızı araba
-    bodyCtx.fillRect(0, 0, 256, 256);
-    bodyCtx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Beyaz şerit
-    bodyCtx.fillRect(108, 0, 40, 256);
-    const bodyTexture = new THREE.CanvasTexture(bodyCanvas);
+    const bodyTexture = createPlayerCarBodyTexture();
+    const bodyMaterial = new THREE.MeshPhongMaterial({ map: bodyTexture, flatShading: true });
     
     // CanvasTexture ile pencere dokusu
-    const windowCanvas = document.createElement('canvas');
-    windowCanvas.width = 64; windowCanvas.height = 64;
-    const windowCtx = windowCanvas.getContext('2d');
-    const gradient = windowCtx.createLinearGradient(0, 0, 0, 64);
-    gradient.addColorStop(0, '#333');
-    gradient.addColorStop(1, '#666');
-    windowCtx.fillStyle = gradient;
-    windowCtx.fillRect(0, 0, 64, 64);
-    const windowTexture = new THREE.CanvasTexture(windowCanvas);
-    
-    const bodyMaterial = new THREE.MeshPhongMaterial({ map: bodyTexture, flatShading: true });
-    const secondaryMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true });
+    const windowTexture = createPlayerCarWindowTexture();
     const windowMaterial = new THREE.MeshPhongMaterial({ map: windowTexture, transparent: true, opacity: 0.8, flatShading: true });
 
-    // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+    const secondaryMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true });
     const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88 });
     const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
     
@@ -300,8 +306,8 @@ function createPlayer() {
     scene.add(player);
 }
 
-// CanvasTexture ile polis araba gövdesi dokusu
-function createPoliceCarTexture() {
+// Polis araba gövdesi için CanvasTexture oluşturma
+function createPoliceCarBodyTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 128;
     canvas.height = 256;
@@ -330,7 +336,7 @@ function createPoliceCar() {
     policeCar = new THREE.Group();
 
     // CanvasTexture ile polis araba gövdesi dokusu
-    const policeTexture = createPoliceCarTexture();
+    const policeTexture = createPoliceCarBodyTexture();
     const bodyMaterial = new THREE.MeshPhongMaterial({ map: policeTexture, flatShading: true });
     
     const blackTrimMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
@@ -440,7 +446,7 @@ function createPedestrian(isJulie = false) {
     const pedestrian = new THREE.Mesh(geometry, material);
     pedestrian.position.y = 1.2;
     pedestrian.userData.isJulie = isJulie;
-    pedestrian.userData.isStaticObject = true; // Dünya ile birlikte kayması için
+    pedestrian.userData.isStaticObject = true; 
     return pedestrian;
 }
 
@@ -459,7 +465,7 @@ function createFlyingDebris() {
     return debris;
 }
 
-// CanvasTexture ile bina dokusu
+// CanvasTexture ile bina dokusu (içsel olarak oluşturulur)
 function createBuildingTexture(width, height, floors) {
     const canvas = document.createElement('canvas');
     canvas.width = 128; 
@@ -489,31 +495,6 @@ function createBuildingTexture(width, height, floors) {
             }
             ctx.fillRect(x, y, windowWidth, windowHeight);
         }
-    }
-    return new THREE.CanvasTexture(canvas);
-}
-
-// CanvasTexture ile genel zemin dokusu (kullanılmayacak, sadece örnek)
-function createGroundTextureInternal() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128; canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#666';
-    ctx.fillRect(0, 0, 128, 128);
-
-    ctx.strokeStyle = '#555';
-    ctx.lineWidth = 2;
-
-    for(let i = 0; i < 128; i += 32) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, 128);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(128, i);
-        ctx.stroke();
     }
     return new THREE.CanvasTexture(canvas);
 }
@@ -568,7 +549,7 @@ function createCityDecoration(type, text = "MALIBU CLUB") {
     material.map = new THREE.CanvasTexture(canvas);
     const decoration = new THREE.Mesh(geometry, material);
     decoration.position.y = 10;
-    decoration.userData.isStaticObject = true; // Dünya ile birlikte kayması için
+    decoration.userData.isStaticObject = true; 
     return decoration;
 }
 
@@ -591,13 +572,13 @@ function createBeachDetail(type) {
     material.map = new THREE.CanvasTexture(canvas);
     const detail = new THREE.Mesh(geometry, material);
     detail.rotation.x = -Math.PI / 2;
-    detail.userData.isStaticObject = true; // Dünya ile birlikte kayması için
+    detail.userData.isStaticObject = true; 
     return detail;
 }
 
 function createAmbulance() {
     const ambulance = new THREE.Group();
-    ambulance.userData.type = 'ambulance'; // YENİ EKLENEN SATIR: Tip bilgisi
+    ambulance.userData.type = 'ambulance'; 
     const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, flatShading: true });
     const stripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, flatShading: true });
     const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, transparent: true, opacity: 0.8, flatShading: true });
@@ -1041,7 +1022,7 @@ function createPalmLeavesTexture() {
 
 function createPalmTree(x, z) {
     const palm = new THREE.Group();
-    palm.userData.isStaticObject = true; // Dünya ile birlikte kayması için
+    palm.userData.isStaticObject = true; 
     const trunkHeight = 12 + Math.random() * 4;
     
     // CanvasTexture ile gövde dokusu
@@ -1111,9 +1092,437 @@ function createStreetLightPoleTexture() {
     return new THREE.CanvasTexture(canvas);
 }
 
-// CanvasTexture ile ampul dokusu (basit sarı daire)
+// CanvasTexture ile ampul dokusu (basit sarı daire) - HATA DÜZELTİLDİ
 function createStreetLightBulbTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 64; canvas.height = 64;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ff
+    ctx.fillStyle = '#ffd700'; // Ampul rengi (sarı)
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, Math.PI * 2, false); // Daire çiz
+    ctx.fill();
+    return new THREE.CanvasTexture(canvas);
+}
+
+function createStreetLights() {
+    // Direk dokusu
+    const poleTexture = createStreetLightPoleTexture();
+    poleTexture.wrapT = THREE.RepeatWrapping;
+    poleTexture.repeat.set(1, 8 / 2); 
+    const poleMaterial = new THREE.MeshPhongMaterial({ map: poleTexture });
+    
+    // Ampul dokusu
+    const bulbTexture = createStreetLightBulbTexture(); // DÜZELTİLDİ: Eksik fonksiyon çağrısı
+    const bulbMaterial = new THREE.MeshBasicMaterial({ map: bulbTexture, transparent: true });
+
+    const spacing = 150;
+    for (let i = 0; i < TOTAL_LENGTH / spacing; i++) {
+        [-1, 1].forEach(side => {
+            const lightGroup = new THREE.Group();
+            lightGroup.userData.isStaticObject = true; // Dünya ile birlikte kayması için
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 8, 8), poleMaterial);
+            pole.position.y = 4;
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.4), bulbMaterial.clone());
+            const light = new THREE.PointLight(0xffd700, 1, 30, 2);
+            bulb.position.y = 8.2;
+            light.position.y = 8;
+            lightGroup.add(pole, bulb, light);
+            lightGroup.position.set((ROAD_WIDTH / 2 + 2) * side, 0, i * spacing - TOTAL_LENGTH / 2);
+            lightGroup.castShadow = true;
+            lightGroup.userData = { isStreetlight: true, isHit: false, isFalling: false, isStaticObject: true };
+            streetLights.push(lightGroup); scene.add(lightGroup);
+        });
+    }
+}
+
+// CanvasTexture ile yağmur damlası dokusu
+function createRainParticleTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 16; canvas.height = 16;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.arc(8, 8, 7, 0, Math.PI * 2, false);
+    ctx.fill();
+    return new THREE.CanvasTexture(canvas);
+}
+
+function createRain() {
+    const vertices = [];
+    for (let i = 0; i < 15000; i++) vertices.push(THREE.MathUtils.randFloatSpread(50), THREE.MathUtils.randFloat(0, 50), THREE.MathUtils.randFloatSpread(50));
+    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    // Yağmur partikülü dokusu
+    const rainParticleTexture = createRainParticleTexture();
+    const rainParticleMaterial = new THREE.PointsMaterial({ 
+        map: rainParticleTexture, 
+        color: 0xaaaaaa, 
+        size: 0.5, 
+        transparent: true,
+        blending: THREE.AdditiveBlending 
+    });
+    rain = new THREE.Points(geometry, rainParticleMaterial);
+    rain.visible = false; scene.add(rain);
+}
+
+function toggleRain(state) {
+    isRaining = state; rain.visible = state;
+    const wetRoadColor = new THREE.Color(0x222222); const dryRoadColor = new THREE.Color(0x808080);
+    road.children.forEach(segment => {
+        const currentMaterial = segment.material;
+        currentMaterial.color = state ? wetRoadColor : dryRoadColor;
+        currentMaterial.shininess = state ? 80 : 10;
+        currentMaterial.needsUpdate = true;
+    });
+}
+
+function updateRain(deltaTime) {
+    if (!rain) return; const positions = rain.geometry.attributes.position.array;
+    for (let i = 1; i < positions.length; i += 3) {
+        positions[i] -= 20 * deltaTime;
+        if (positions[i] < -5) positions[i] = 50;
+    }
+    rain.geometry.attributes.position.needsUpdate = true;
+    if (player) { rain.position.x = player.position.x; rain.position.z = player.position.z; }
+}
+
+function updatePedestrians() {
+    [...pedestrians, ...cityDecorations].forEach(p => {
+        if(p === hotelSign) return;
+        p.rotation.y = Math.atan2( ( camera.position.x - p.position.x ), ( camera.position.z - p.position.z ) );
+    });
+     parkedCars.forEach(p => {
+        p.rotation.y = -Math.PI/2 + Math.atan2( ( camera.position.x - p.position.x ), ( camera.position.z - p.position.z ) );
+    });
+}
+
+function updateFlyingDebris(deltaTime) {
+    flyingDebris.forEach(debris => {
+        debris.position.add(debris.userData.velocity);
+        debris.rotation.x += debris.userData.rotationSpeed.x;
+        debris.rotation.y += debris.userData.rotationSpeed.y;
+        debris.rotation.z += debris.userData.rotationSpeed.z;
+
+        if (debris.position.y > 10) {
+            debris.userData.velocity.y = -0.02;
+        }
+        if (debris.position.y < 0.2) {
+            debris.userData.velocity.y = Math.random() * 0.05 + 0.02;
+        }
+    });
+}
+
+function setupMission1Objects() {
+    const hotelX = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 15;
+    const hotelZ = -1500;
+    
+    hotelSign = createCityDecoration('hotel', "HOTEL");
+    hotelSign.position.set(hotelX, 15, hotelZ);
+    hotelSign.rotation.y = -Math.PI / 2;
+    cityDecorations.push(hotelSign);
+    scene.add(hotelSign);
+}
+
+function startMission1() {
+    if (missionState.status !== 'inactive') return;
+    
+    missionState.status = 'pickupCinematic';
+    missionState.cinematicTimer = 6;
+    showSubtitle("General'in kizi tehlikede! Onu kurtar!", 4000);
+
+    if(policeCar) scene.remove(policeCar);
+    policeCar = null;
+    if(sounds.siren && sounds.siren.playing()) sounds.siren.stop();
+
+    julieNPC = createPedestrian(true);
+    const julieX = player.position.x > 0 ? (ROAD_WIDTH / 2 + SIDEWALK_WIDTH / 2) : (-ROAD_WIDTH / 2 - SIDEWALK_WIDTH / 2);
+    julieNPC.position.set(julieX, 1.2, player.position.z - 60);
+    pedestrians.push(julieNPC);
+    scene.add(julieNPC);
+
+    missionState.cinematicTarget = new THREE.Vector3(julieX - 3, 0, julieNPC.position.z + 5);
+}
+
+function updateMission(deltaTime) {
+    if (missionState.status === 'inactive') {
+        if (score >= 5000) {
+            startMission1();
+        }
+        return;
+    }
+
+    switch(missionState.status) {
+        case 'pickupCinematic':
+            player.position.lerp(missionState.cinematicTarget, 0.02);
+            speed = Math.max(0, speed * 0.98);
+
+            missionState.cinematicTimer -= deltaTime;
+            if (missionState.cinematicTimer <= 2 && julieNPC && julieNPC.parent === scene) {
+                scene.remove(julieNPC); 
+                pedestrians = pedestrians.filter(p => !p.userData.isJulie);
+                julieNPC = null;
+            }
+            if (missionState.cinematicTimer <= 0) {
+                missionState.status = 'drivingWithJulie';
+                missionState.julieChatterTimer = 5; 
+                showSubtitle("Onu 10000 skora ulasana kadar koru!", 5000);
+
+                canBeCaught = true;
+                wantedLevel = 2;
+                updateStarsUI();
+            }
+            break;
+
+        case 'drivingWithJulie':
+            missionState.julieChatterTimer -= deltaTime;
+            if(missionState.julieChatterTimer <= 0){
+                showSpeechBubble('julie', ''); 
+                missionState.julieChatterTimer = 8 + Math.random() * 5; 
+            }
+            
+            if(score >= 10000){
+                missionState.status = 'dropoffCinematic';
+                missionState.cinematicTimer = 8;
+                showSubtitle("Otel! Burasi guvenli olmali.", 4000);
+                missionState.cinematicTarget = new THREE.Vector3(hotelSign.position.x - 3, 0, hotelSign.position.z + 5);
+            }
+            break;
+
+        case 'dropoffCinematic':
+            player.position.lerp(missionState.cinematicTarget, 0.02);
+            speed = Math.max(0, speed * 0.98);
+            
+            missionState.cinematicTimer -= deltaTime;
+
+            if(missionState.cinematicTimer <= 6 && !document.getElementById('julie-speech-bubble').classList.contains('visible')) {
+                showSpeechBubble('julie', 'tesekkurler yakisikli ?', 3000);
+            }
+            if(missionState.cinematicTimer <= 3 && !document.getElementById('player-speech-bubble').classList.contains('visible')) {
+                showSpeechBubble('player', 'tekrar goruseriz bebek', 3000);
+            }
+
+            if (missionState.cinematicTimer <= 0) {
+                missionState.status = 'completed';
+                showSubtitle("Gorev Tamamlandi! +20000 SKOR", 5000);
+                score += 20000;
+                wantedLevel = 0;
+                updateStarsUI();
+            }
+            break;
+    }
+}
+
+function initializeGame() { 
+    try {
+        clock = new THREE.Clock(); scene = new THREE.Scene();
+        
+        // Gökyüzü için basit bir renk veya gradyan arka plan
+        scene.background = dayCycleParameters.NIGHT.background.clone(); 
+        
+        // Hafif sis
+        scene.fog = new THREE.Fog(0xcce0ff, TOTAL_LENGTH * 0.6, TOTAL_LENGTH); 
+
+        hemiLight = new THREE.HemisphereLight(dayCycleParameters.NIGHT.hemiSky, dayCycleParameters.NIGHT.hemiGround, dayCycleParameters.NIGHT.dirIntensity);
+        scene.add(hemiLight);
+        dirLight = new THREE.DirectionalLight(dayCycleParameters.NIGHT.dirLight, dayCycleParameters.NIGHT.dirIntensity);
+        dirLight.position.set(-50, 40, 20); dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
+        dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100;
+        dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
+        scene.add(dirLight); 
+        
+        createWorld(); 
+        
+        // OPTİMİZASYON: Trafik arabası havuzunu oluştur
+        for(let i = 0; i < 25; i++) { 
+            const car = createTrafficCarInternal(); 
+            car.visible = false; 
+            trafficCarPool.push(car);
+            scene.add(car); 
+        }
+
+        updateHealth();
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
+        isIntroPlaying = true;
+        cinematicCameraTarget = new THREE.Vector3();
+        camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
+        camera.lookAt(player.position);
+
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
+        renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
+        
+        setupControls(); 
+        areHazardLightsOn = true;
+        
+        animate(); 
+        
+        window.addEventListener('resize', onWindowResize, false);
+        document.getElementById('game').classList.add('visible');
+        
+        setTimeout(() => {
+            showSpeechBubble('player', 'Hmm, guzel araba... Artik benim.');
+        }, 1500);
+
+        document.getElementById('mission-container').style.display = 'none';
+
+        if (sounds?.engine) sounds.engine.play();
+    } catch(e) {
+        displayError(e);
+    }
+}
+
+function animate() { 
+    requestAnimationFrame(animate); 
+    if (isGameOver) return;
+    const deltaTime = clock.getDelta();
+    
+    let effectiveDeltaTime = deltaTime;
+    let currentSpeed = speed;
+
+    if (isIntroPlaying) {
+        cinematicCameraTarget.set(
+            player.position.x * 0.6,
+            player.position.y + 12 - (speed / 5.5 * 2),
+            player.position.z + 25 - (speed / 5.5 * 5)
+        );
+        camera.position.lerp(cinematicCameraTarget, deltaTime * 0.6);
+        const lookAtTarget = new THREE.Vector3(player.position.x, player.position.y + 2.0, player.position.z);
+        camera.lookAt(lookAtTarget);
+        if (camera.position.distanceTo(cinematicCameraTarget) < 1.0) {
+            isIntroPlaying = false;
+            document.getElementById('ui-container').classList.add('visible');
+            if (window.innerWidth <= 768) {
+                document.getElementById('mobile-controls').classList.add('visible');
+            }
+        }
+        renderer.render(scene, camera);
+        return;
+    }
+
+    updateMission(deltaTime);
+
+    if (isRampJumpingCinematic) {
+        effectiveDeltaTime *= 0.3; 
+        currentSpeed *= 0.3;
+
+        rampJumpCinematicTimer -= deltaTime;
+        if (rampJumpCinematicTimer <= 0) {
+            isRampJumpingCinematic = false;
+            shakeCamera(0.4);
+        }
+    } else if (!missionState.status.includes('Cinematic')) {
+        updatePlayerMovement();
+        if (canBeCaught) {
+            updatePoliceAI(deltaTime);
+            checkPoliceCollisions();
+        }
+        checkDestructibleCollisions();
+        checkCollisions();
+    }
+    
+    checkRampJumps();
+    
+    if (player.userData.isJumping) {
+        player.position.y += player.userData.verticalVelocity * effectiveDeltaTime;
+        player.userData.verticalVelocity -= 25 * effectiveDeltaTime;
+        if (player.position.y <= 0) { 
+            player.position.y = 0; 
+            player.userData.isJumping = false;
+            player.userData.verticalVelocity = 0;
+            if(!isRampJumpingCinematic) shakeCamera(0.2);
+        }
+    }
+
+    const topSpeed = 5.5;
+    if (isRadioPlaying && sounds.radio && sounds.engine) {
+        const normalizedSpeed = Math.min(speed / topSpeed, 1.0);
+        const targetRadioVol = RADIO_VOL_MAX - (normalizedSpeed * (RADIO_VOL_MAX - RADIO_VOL_MIN));
+        const targetEngineVol = ENGINE_VOL_MIN + (normalizedSpeed * (ENGINE_VOL_MAX - ENGINE_VOL_MIN));
+        sounds.radio.volume(THREE.MathUtils.lerp(sounds.radio.volume(), targetRadioVol, 0.05));
+        sounds.engine.volume(THREE.MathUtils.lerp(sounds.engine.volume(), targetEngineVol, 0.05));
+    }
+    if (policeDisableTimer > 0) policeDisableTimer -= deltaTime;
+    if(hasPlayerMoved) gameTime += deltaTime;
+    if (areHazardLightsOn) { if(player && player.userData.lights) Object.values(player.userData.lights).forEach(light => {
+        if (light.isMesh) {
+            light.material.color.setHex(Math.sin(clock.getElapsedTime() * 8) > 0 ? 0xFFFF88 : 0xAAAA00); 
+        } else if (light instanceof THREE.PointLight) {
+            light.intensity = Math.sin(clock.getElapsedTime() * 8) > 0 ? 1.5 : 0;
+        }
+    }); }
+    if (policeSpawnTimer > 0) { policeSpawnTimer -= deltaTime; if (policeSpawnTimer <= 0) { createPoliceCar(); startGame(); } }
+    if (hasPlayerMoved && !isBoosting) { if (cleanDrivingTime < BOOST_CHARGE_TIME) cleanDrivingTime += deltaTime; else if (!isBoostAvailable) { isBoostAvailable = true; updateBoostUI(); } }
+    if (isBoosting) { boostTimeRemaining -= deltaTime; if (boostTimeRemaining <= 0) isBoosting = false; }
+    if (hasPlayerMoved && wantedLevel > 0 && gameTime > nextChatterTime) { generateRadioChatter(); nextChatterTime = gameTime + CHATTER_INTERVAL + Math.random() * 10; }
+    if (hasPlayerMoved && gameTime > nextMissionPromptTime) {
+        const missionContainer = document.getElementById('mission-container');
+        if (missionContainer && !missionContainer.classList.contains('visible') && missionState.status === 'completed') {
+            if (missionHideTimeout) clearTimeout(missionHideTimeout);
+            document.getElementById('mission-text').innerText = turkishToEnglish("Yeni bir görev almak icin dugmeye bas!");
+            document.getElementById('generate-mission-btn').disabled = false;
+            document.getElementById('generate-mission-btn').innerHTML = turkishToEnglish('✨ Yeni Görev Al');
+            missionContainer.style.display = 'flex';
+            setTimeout(() => missionContainer.classList.add('visible'), 10);
+            missionHideTimeout = setTimeout(() => {
+                missionContainer.classList.remove('visible');
+                missionContainer.addEventListener('transitionend', () => {
+                    if (!missionContainer.classList.contains('visible')) { missionContainer.style.display = 'none'; }
+                }, { once: true });
+            }, 3000);
+        }
+        nextMissionPromptTime = gameTime + MISSION_PROMPT_INTERVAL + Math.random() * 15;
+    }
+
+    trafficCars.forEach(car => {
+        if (car.userData.type === 'ambulance' && !car.userData.healedPlayer) {
+            const distance = player.position.distanceTo(car.position);
+            const proximityThreshold = 15;
+            if (distance < proximityThreshold) {
+                playerHealth = Math.min(100, playerHealth + 5); 
+                car.userData.healedPlayer = true;
+                updateHealth();
+                showSpeechBubble('player', '+5 Can!'); 
+                if (sounds.heal_sound) sounds.heal_sound.play();
+            }
+        }
+    });
+
+    const newDifficultyLevel = Math.floor(score / 20000);
+    if (newDifficultyLevel > trafficDifficultyLevel) {
+        trafficDifficultyLevel = newDifficultyLevel;
+    }
+
+    updateDayCycle(deltaTime);
+    if (canBeCaught && !isGameOver && clock.getElapsedTime() > nextSpeechBubbleTime && missionState.status !== 'drivingWithJulie') {
+        if (Math.random() < 0.5) { showSpeechBubble('police'); } else { showSpeechBubble('player'); }
+        nextSpeechBubbleTime = clock.getElapsedTime() + SPEECH_BUBBLE_INTERVAL + (Math.random() * 4 - 2);
+    }
+    if (wantedLevel > 0 && wantedLevelCooldown > 0) { wantedLevelCooldown -= deltaTime; if (wantedLevelCooldown <= 0) { wantedLevel--; updateStarsUI(); if (wantedLevel > 0) wantedLevelCooldown = 5; } }
+    
+    updateTraffic(effectiveDeltaTime); 
+    if(canBeCaught) updatePoliceShooting(effectiveDeltaTime); 
+    updateDebris(effectiveDeltaTime); 
+    updateBulletSparks(effectiveDeltaTime); 
+    if (isRaining) updateRain(effectiveDeltaTime);
+    updateFallingObjects(effectiveDeltaTime); 
+    updateCamera(); 
+    moveWorld(currentSpeed); 
+    updatePedestrians();
+    updateFlyingDebris(effectiveDeltaTime);
+
+    const time = clock.getElapsedTime() * 5; 
+    if (policeCar && sirenLightRed) sirenLightRed.material.emissiveIntensity = Math.sin(time) > 0 ? 1.0 : 0.0; 
+    if (policeCar && sirenLightBlue) sirenLightBlue.material.emissiveIntensity = Math.sin(time) < 0 ? 1.0 : 0.0; 
+    score += missionState.status.includes('Cinematic') ? 0 : speed;
+    document.getElementById('score').innerText = `SKOR: ${Math.floor(score)}`;
+    
+    if (!policeCar && canBeCaught && wantedLevel > 0 && hasPlayerMoved && !isGameOver) { createPoliceCar(); }
+    renderer.render(scene, camera);
+}
+
+// OYUNU BAŞLAT
+window.addEventListener('DOMContentLoaded', () => { 
+    loadSounds();
+    loadAssets(); // Bu fonksiyon, yükleme ekranını yönetmek için hala kullanılabilir.
+    setupGameStart(); // Bu fonksiyon, kullanıcı etkileşimi ile oyunu başlatır.
+});
