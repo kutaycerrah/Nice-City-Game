@@ -1,6 +1,8 @@
 // YEREL KÜTÜPHANE YÜKLENDİ
 import * as THREE from './three.module.js';
-import { FontLoader } from 'three/addons/loaders/FontLoader.js'; // YENİ: FontLoader'ı import et
+// FontLoader'ın yeni versiyonlarda 'addons' klasöründen import edilmesi gerekir.
+// Eğer three.module.js'iniz eski veya farklı bir yapıdaysa, bu satır sorun yaratabilir.
+import { FontLoader } from 'three/addons/loaders/FontLoader.js'; 
 
 // --- YARDIMCI FONKSİYON ---
 function turkishToEnglish(text) {
@@ -144,10 +146,12 @@ function loadSounds() {
     sounds = {
         // YEREL SES DOSYASI YOLLARI
         engine: new Howl({ src: ['sounds/engine_sound.ogg'], loop: true, volume: ENGINE_VOL_MIN, html5: true }),
-        crash: new Howl({ src: ['sounds/crash.ogg'], volume: 0.5 }),
+        // crash.ogg dosyası hata verdiği için kaldırıldı. Eğer eklerseniz, bu satırı tekrar açabilirsiniz.
+        // crash: new Howl({ src: ['sounds/crash.ogg'], volume: 0.5 }), 
+        // spell_heal.ogg dosyası hata verdiği için kaldırıldı. Eğer eklerseniz, bu satırı tekrar açabilirsiniz.
+        // heal_sound: new Howl({ src: ['sounds/spell_heal.ogg'], volume: 0.7 }),
         siren: new Howl({ src: ['sounds/police_sound.mp3'], loop: true, volume: SIREN_VOLUME }), // DÜZELTİLDİ: .ogg yerine .mp3
-        radio: new Howl({ src: ['sounds/Vice City Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true }),
-        heal_sound: new Howl({ src: ['sounds/spell_heal.ogg'], volume: 0.7 }) // Bu dosyayı yüklediğinizden emin olun!
+        radio: new Howl({ src: ['sounds/Vice City Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true })
     }
 }
 
@@ -534,7 +538,9 @@ function createCityDecoration(type, text = "MALIBU CLUB") {
     if (type === 'nightclub' || type === 'hotel') {
         canvas.width = 256; canvas.height = 128;
         const ctx = canvas.getContext('2d');
-        ctx.font = `bold ${type === 'hotel' ? '40px' : '48px'} 'Bebas Neue', sans-serif`;
+        // 'Bebas Neue' fontu sistemde yüklü değilse varsayılan fonta düşer, bu da görseli etkiler.
+        // Bu yüzden, daha evrensel bir font kullanmak daha iyi olabilir veya fontu CSS ile import etmek.
+        ctx.font = `bold ${type === 'hotel' ? '40px' : '48px'} sans-serif`; 
         ctx.fillStyle = type === 'hotel' ? '#00ffff' : '#ff00ff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -629,10 +635,7 @@ function createAmbulance() {
 
     const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
     const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
-    const createWheel = () => { 
-        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial); 
-        wheel.rotation.z = Math.PI / 2; return wheel; 
-    };
+    const createWheel = () => { const w = new THREE.Mesh(wheelGeometry, wheelMaterial); w.rotation.z = Math.PI / 2; return w; };
     const wFL = createWheel(); wFL.position.set(-1.4, 0.5, -2.0);
     const wFR = createWheel(); wFR.position.set(1.4, 0.5, -2.0);
     const wBL = createWheel(); wBL.position.set(-1.4, 0.5, 2.0);
@@ -1008,7 +1011,7 @@ function createPalmTrunkTexture() {
     return new THREE.CanvasTexture(canvas);
 }
 
-// CanvasTexture ile palmiye yaprak dokusu - DÜZELTİLDİ
+// CanvasTexture ile palmiye yaprak dokusu
 function createPalmLeavesTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 64; canvas.height = 32;
@@ -1483,7 +1486,8 @@ function animate() {
                 car.userData.healedPlayer = true;
                 updateHealth();
                 showSpeechBubble('player', '+5 Can!'); 
-                if (sounds.heal_sound) sounds.heal_sound.play();
+                // Eğer spell_heal.ogg dosyası yoksa, bu ses çalmayacaktır.
+                // if (sounds.heal_sound) sounds.heal_sound.play();
             }
         }
     });
