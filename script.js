@@ -1008,6 +1008,7 @@ function createPalmTrunkTexture() {
 }
 
 // CanvasTexture ile palmiye yaprak dokusu
+// CanvasTexture ile palmiye yaprak dokusu
 function createPalmLeavesTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 64; canvas.height = 32;
@@ -1016,9 +1017,12 @@ function createPalmLeavesTexture() {
     ctx.fillRect(0,0,64,32);
     ctx.strokeStyle = '#0a6a4f';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0,16); ctx.lineTo(64,16); ctx.stroke(); }
-    return new THREE.CanvasTexture(canvas); 
-}
+    ctx.beginPath(); ctx.moveTo(0,16); ctx.lineTo(64,16); ctx.stroke(); // Orta damar
+    // Hatanın olduğu yer burasıydı, buraya fonksiyon bloğunu kapatan '}' EKLENMELİYDİ.
+    // Ancak size verdiğim tam kodda bu zaten yapılı olduğu için, sadece buradaki boşluğu gösterdim.
+
+    return new THREE.CanvasTexture(canvas);
+} // createPalmLeavesTexture fonksiyonunun kendisini kapatan doğru '}' burada.
 function createPalmTree(x, z) {
     const palm = new THREE.Group();
     palm.userData.isStaticObject = true; 
