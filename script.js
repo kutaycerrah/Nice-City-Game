@@ -1,8 +1,9 @@
 // YEREL KÜTÜPHANE YÜKLENDİ
 import * as THREE from './three.module.js';
-// FontLoader'ın yeni versiyonlarda 'addons' klasöründen import edilmesi gerekir.
-// Eğer three.module.js'iniz eski veya farklı bir yapıdaysa, bu satır sorun yaratabilir.
-import { FontLoader } from 'three/addons/loaders/FontLoader.js'; 
+// FontLoader'ı doğru göreceli yoldan import et
+// three.module.js ile aynı seviyede 'addons' klasörünün içinde olduğunu varsayarız.
+import { FontLoader } from './addons/loaders/FontLoader.js'; 
+
 
 // --- YARDIMCI FONKSİYON ---
 function turkishToEnglish(text) {
@@ -146,18 +147,22 @@ function loadSounds() {
     sounds = {
         // YEREL SES DOSYASI YOLLARI
         engine: new Howl({ src: ['sounds/engine_sound.ogg'], loop: true, volume: ENGINE_VOL_MIN, html5: true }),
-        // crash.ogg dosyası hata verdiği için kaldırıldı. Eğer eklerseniz, bu satırı tekrar açabilirsiniz.
+        // crash.ogg dosyası hata verdiği için devre dışı bırakıldı. Eğer dosya varsa ve kullanmak isterseniz bu satırı etkinleştirin:
         // crash: new Howl({ src: ['sounds/crash.ogg'], volume: 0.5 }), 
-        // spell_heal.ogg dosyası hata verdiği için kaldırıldı. Eğer eklerseniz, bu satırı tekrar açabilirsiniz.
+        // spell_heal.ogg dosyası hata verdiği için devre dışı bırakıldı. Eğer dosya varsa ve kullanmak isterseniz bu satırı etkinleştirin:
         // heal_sound: new Howl({ src: ['sounds/spell_heal.ogg'], volume: 0.7 }),
-        siren: new Howl({ src: ['sounds/police_sound.mp3'], loop: true, volume: SIREN_VOLUME }), // DÜZELTİLDİ: .ogg yerine .mp3
+        siren: new Howl({ src: ['sounds/police_sound.mp3'], loop: true, volume: SIREN_VOLUME }), 
         radio: new Howl({ src: ['sounds/Vice City Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true })
     }
+    // howler.min.js:2 HTML5 Audio pool exhausted hatası için:
+    // Bu, tarayıcının aynı anda çok fazla ses çalmaya çalıştığını veya ses kaynaklarının yetersiz olduğunu gösterebilir.
+    // Sesleri sadece ihtiyaç duyulduğunda çalmaya ve işi bitince durdurmaya özen gösterin.
+    // howler.js'in en son versiyonunu kullandığınızdan emin olun.
 }
 
 
 function loadAssets() {
-    // Bu fonksiyonu, oyun başlatma sürecinin görsel ilerlemesini göstermek için kullanabilirsiniz.
+    // Bu fonksiyon, oyun başlatma sürecinin görsel ilerlemesini göstermek için kullanılabilir.
     const loadingBar = document.getElementById('loading-bar');
     const loadingPercentage = document.getElementById('loading-percentage');
     let progress = 0;
@@ -384,8 +389,7 @@ function createPoliceCar() {
     const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
     const createWheel = () => { 
         const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial); 
-        wheel.rotation.z = Math.PI / 2; return wheel; 
-    };
+        wheel.rotation.z = Math.PI / 2; return w; };
     const wFL = createWheel(); wFL.position.set(-1.3, 0.4, -1.6); 
     const wFR = createWheel(); wFR.position.set(1.3, 0.4, -1.6);
     const wBL = createWheel(); wBL.position.set(-1.3, 0.4, 1.8); 
@@ -538,8 +542,9 @@ function createCityDecoration(type, text = "MALIBU CLUB") {
     if (type === 'nightclub' || type === 'hotel') {
         canvas.width = 256; canvas.height = 128;
         const ctx = canvas.getContext('2d');
-        // 'Bebas Neue' fontu sistemde yüklü değilse varsayılan fonta düşer, bu da görseli etkiler.
+        // 'Bebas Neue' fontu sistemde yüklü değilse varsayılan fonta düşer.
         // Bu yüzden, daha evrensel bir font kullanmak daha iyi olabilir veya fontu CSS ile import etmek.
+        // Şimdilik 'sans-serif' kullanılıyor.
         ctx.font = `bold ${type === 'hotel' ? '40px' : '48px'} sans-serif`; 
         ctx.fillStyle = type === 'hotel' ? '#00ffff' : '#ff00ff';
         ctx.textAlign = 'center';
@@ -635,7 +640,9 @@ function createAmbulance() {
 
     const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
     const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
-    const createWheel = () => { const w = new THREE.Mesh(wheelGeometry, wheelMaterial); w.rotation.z = Math.PI / 2; return w; };
+    const createWheel = () => { 
+        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial); 
+        wheel.rotation.z = Math.PI / 2; return w; };
     const wFL = createWheel(); wFL.position.set(-1.4, 0.5, -2.0);
     const wFR = createWheel(); wFR.position.set(1.4, 0.5, -2.0);
     const wBL = createWheel(); wBL.position.set(-1.4, 0.5, 2.0);
@@ -955,8 +962,8 @@ function createNiceCitySign() {
     const text = "NICE CITY";
     let currentX = 0;
 
-    // Font yükleyici hala gerekli
-    const fontLoader = new FontLoader(); // THREE.FontLoader yerine FontLoader kullanıldı
+    // Font yükleyiciyi kullan
+    const fontLoader = new FontLoader(); 
     fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
         for (let i = 0; i < text.length; i++) {
             const letter = text.charAt(i);
@@ -995,7 +1002,35 @@ function createNiceCitySign() {
         });
 
         scene.add(niceCitySign);
-    });
+    },
+    // Progress callback (isteğe bağlı)
+    undefined,
+    // Error callback: Font yüklenemezse ne olacağını belirtin.
+    function ( err ) {
+        console.error( 'Font yüklenirken bir hata oluştu. FontLoader için doğru yol veya dosya eksik olabilir.', err );
+        // Font yüklenemezse, NICE CITY yazısını oluşturmamak veya basit 3D kutular kullanmak gibi bir yedek çözüm uygulayabilirsiniz.
+        // Örneğin:
+        const FALLBACK_LETTER_SIZE = 5; // Yedek harf boyutu
+        const FALLBACK_LETTER_SPACING = 3; // Yedek harf aralığı
+        let fallbackCurrentX = 0;
+        const fallbackMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
+
+        for (let i = 0; i < text.length; i++) {
+            const letter = text.charAt(i);
+            if (letter === ' ') {
+                fallbackCurrentX += FALLBACK_LETTER_SPACING * 2;
+                continue;
+            }
+            const boxGeometry = new THREE.BoxGeometry(FALLBACK_LETTER_SIZE * 0.8, FALLBACK_LETTER_SIZE, FALLBACK_LETTER_SIZE * 0.2);
+            const boxMesh = new THREE.Mesh(boxGeometry, fallbackMaterial);
+            boxMesh.position.set(fallbackCurrentX, horizonHill.position.y + horizonHill.geometry.parameters.height / 2 + FALLBACK_LETTER_SIZE / 2 + 5, horizonHill.position.z);
+            niceCitySign.add(boxMesh);
+            fallbackCurrentX += FALLBACK_LETTER_SIZE * 0.8 + FALLBACK_LETTER_SPACING;
+        }
+        niceCitySign.position.x -= fallbackCurrentX / 2; // Ortala
+        scene.add(niceCitySign); // Yedek tabelayı ekle
+    }
+    ); // FontLoader.load fonksiyonu kapanışı
 }
 
 // CanvasTexture ile palmiye gövde dokusu
