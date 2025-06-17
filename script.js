@@ -1,5 +1,6 @@
 // YEREL KÜTÜPHANE YÜKLENDİ
 import * as THREE from './three.module.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js'; // YENİ: FontLoader'ı import et
 
 // --- YARDIMCI FONKSİYON ---
 function turkishToEnglish(text) {
@@ -72,7 +73,6 @@ const PEDESTRIAN_SHIRT_COLORS = [0x69d2e7, 0xa7dbd8, 0xf38630, 0xfa6900, 0xff4e5
 const PEDESTRIAN_PANTS_COLORS = [0x004d80, 0x333333, 'beige', 0x654321, 0x444444];
 let flyingDebris = [];
 let parkedCars = [], beachDetails = [], cityDecorations = [];
-// textureLoader ve loadedTextures kaldırıldı, çünkü dışarıdan PNG yüklenmeyecek.
 let cityWall;
 let horizonHill;
 let niceCitySign;
@@ -150,8 +150,6 @@ function loadSounds() {
         heal_sound: new Howl({ src: ['sounds/spell_heal.ogg'], volume: 0.7 }) // Bu dosyayı yüklediğinizden emin olun!
     }
 }
-
-// loadGameTextures fonksiyonu kaldırıldı, çünkü dışarıdan doku yüklenmeyecek.
 
 
 function loadAssets() {
@@ -631,7 +629,10 @@ function createAmbulance() {
 
     const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
     const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
-    const createWheel = () => { const w = new THREE.Mesh(wheelGeometry, wheelMaterial); w.rotation.z = Math.PI / 2; return w; };
+    const createWheel = () => { 
+        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial); 
+        wheel.rotation.z = Math.PI / 2; return wheel; 
+    };
     const wFL = createWheel(); wFL.position.set(-1.4, 0.5, -2.0);
     const wFR = createWheel(); wFR.position.set(1.4, 0.5, -2.0);
     const wBL = createWheel(); wBL.position.set(-1.4, 0.5, 2.0);
@@ -952,7 +953,7 @@ function createNiceCitySign() {
     let currentX = 0;
 
     // Font yükleyici hala gerekli
-    const fontLoader = new THREE.FontLoader();
+    const fontLoader = new FontLoader(); // THREE.FontLoader yerine FontLoader kullanıldı
     fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
         for (let i = 0; i < text.length; i++) {
             const letter = text.charAt(i);
@@ -1007,8 +1008,7 @@ function createPalmTrunkTexture() {
     return new THREE.CanvasTexture(canvas);
 }
 
-// CanvasTexture ile palmiye yaprak dokusu
-// CanvasTexture ile palmiye yaprak dokusu
+// CanvasTexture ile palmiye yaprak dokusu - DÜZELTİLDİ
 function createPalmLeavesTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 64; canvas.height = 32;
@@ -1018,11 +1018,9 @@ function createPalmLeavesTexture() {
     ctx.strokeStyle = '#0a6a4f';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0,16); ctx.lineTo(64,16); ctx.stroke(); // Orta damar
-    // Hatanın olduğu yer burasıydı, buraya fonksiyon bloğunu kapatan '}' EKLENMELİYDİ.
-    // Ancak size verdiğim tam kodda bu zaten yapılı olduğu için, sadece buradaki boşluğu gösterdim.
-
     return new THREE.CanvasTexture(canvas);
-} // createPalmLeavesTexture fonksiyonunun kendisini kapatan doğru '}' burada.
+}
+
 function createPalmTree(x, z) {
     const palm = new THREE.Group();
     palm.userData.isStaticObject = true; 
@@ -1095,7 +1093,7 @@ function createStreetLightPoleTexture() {
     return new THREE.CanvasTexture(canvas);
 }
 
-// CanvasTexture ile ampul dokusu (basit sarı daire) - HATA DÜZELTİLDİ
+// CanvasTexture ile ampul dokusu (basit sarı daire)
 function createStreetLightBulbTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 64; canvas.height = 64;
@@ -1115,14 +1113,14 @@ function createStreetLights() {
     const poleMaterial = new THREE.MeshPhongMaterial({ map: poleTexture });
     
     // Ampul dokusu
-    const bulbTexture = createStreetLightBulbTexture(); // DÜZELTİLDİ: Eksik fonksiyon çağrısı
+    const bulbTexture = createStreetLightBulbTexture(); 
     const bulbMaterial = new THREE.MeshBasicMaterial({ map: bulbTexture, transparent: true });
 
     const spacing = 150;
     for (let i = 0; i < TOTAL_LENGTH / spacing; i++) {
         [-1, 1].forEach(side => {
             const lightGroup = new THREE.Group();
-            lightGroup.userData.isStaticObject = true; // Dünya ile birlikte kayması için
+            lightGroup.userData.isStaticObject = true; 
             const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 8, 8), poleMaterial);
             pole.position.y = 4;
             const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.4), bulbMaterial.clone());
@@ -1526,6 +1524,6 @@ function animate() {
 // OYUNU BAŞLAT
 window.addEventListener('DOMContentLoaded', () => { 
     loadSounds();
-    loadAssets(); // Bu fonksiyon, yükleme ekranını yönetmek için hala kullanılabilir.
-    setupGameStart(); // Bu fonksiyon, kullanıcı etkileşimi ile oyunu başlatır.
+    loadAssets(); 
+    setupGameStart(); 
 });
