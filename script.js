@@ -57,6 +57,9 @@ let scene, camera, renderer, clock;
 let player, policeCar = null, sirenLightRed, sirenLightBlue, road;
 let sounds;
 let roadLines = [], buildings = [], palmTrees = [], guardRails = [], trafficCars = [], streetLights = [], statues = [], debrisParticles = [], rain, bulletSparks = [];
+let trafficCarPool = []; // YENİ EKLENEN SATIR: Obje havuzu için
+const MAX_DEBRIS_PARTICLES = 100; // YENİ EKLENEN SABİT: Partikül optimizasyonu
+const MAX_BULLET_SPARKS = 50;   // YENİ EKLENEN SABİT: Partikül optimizasyonu
 let hemiLight, dirLight;
 let speed = 0, score = 0, wantedLevel = 0, playerHealth = 100, trafficDifficultyLevel = 0;
 let isGameOver = false, canBeCaught = false, isRaining = false, isRadioPlaying = false;
@@ -138,9 +141,9 @@ function loadSounds() {
         // YEREL SES DOSYASI YOLLARI
         engine: new Howl({ src: ['sounds/engine_sound.ogg'], loop: true, volume: ENGINE_VOL_MIN, html5: true }),
         crash: new Howl({ src: ['sounds/crash.ogg'], volume: 0.5 }),
-        siren: new Howl({ src: ['sounds/police_sound.ogg'], loop: true, volume: SIREN_VOLUME }),
+        siren: new Howl({ src: ['sounds/police_sound.mp3'], loop: true, volume: SIREN_VOLUME }), // DÜZELTİLDİ: .ogg yerine .mp3
         radio: new Howl({ src: ['sounds/Vice City Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true }),
-        heal_sound: new Howl({ src: ['sounds/spell_heal.ogg'], volume: 0.7 })
+        heal_sound: new Howl({ src: ['sounds/spell_heal.ogg'], volume: 0.7 }) // Bu dosyayı yüklediğinizden emin olun!
     }
 }
 
@@ -234,8 +237,9 @@ function createPlayer() {
     const secondaryMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true });
     const windowMaterial = new THREE.MeshPhongMaterial({ map: windowTexture, transparent: true, opacity: 0.8, flatShading: true });
 
-    const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.5 });
-    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.8 });
+    // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+    const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88 });
+    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
     
     const mainBody = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.6, 6.0), bodyMaterial);
     mainBody.position.y = 0.6; mainBody.castShadow = true; player.add(mainBody);
@@ -317,7 +321,8 @@ function createPoliceCar() {
     
     const blackTrimMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
     const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, transparent: true, opacity: 0.7 });
-    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xbb0000, emissive: 0xbb0000, emissiveIntensity: 1.5 });
+    // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xbb0000 });
     
     const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 5.4), bodyMaterial);
     mainBody.position.y = 0.7; policeCar.add(mainBody);
@@ -346,10 +351,10 @@ function createPoliceCar() {
     
     const sirenBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.5), blackTrimMaterial);
     sirenBase.position.set(0, 1.6, -0.3); policeCar.add(sirenBase);
-    const sirenLightGeo = new THREE.BoxGeometry(0.5, 0.25, 0.5);
-    sirenLightRed = new THREE.Mesh(sirenLightGeo, new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 }));
+    // OPTİMİZASYON: emissiveIntensity direkt burada ayarlanmıyor, updateDayCycle'da kontrol ediliyor
+    sirenLightRed = new THREE.Mesh(sirenLightGeo, new THREE.MeshStandardMaterial({ color: 0xff0000 }));
     sirenLightRed.position.set(-0.3, 1.7, -0.3); policeCar.add(sirenLightRed);
-    sirenLightBlue = new THREE.Mesh(sirenLightGeo, new THREE.MeshStandardMaterial({ color: 0x0000ff, emissive: 0x0000ff, emissiveIntensity: 0 }));
+    sirenLightBlue = new THREE.Mesh(sirenLightGeo, new THREE.MeshStandardMaterial({ color: 0x0000ff }));
     sirenLightBlue.position.set(0.3, 1.7, -0.3); policeCar.add(sirenLightBlue);
     
     const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
@@ -364,7 +369,8 @@ function createPoliceCar() {
     const wBR = createWheel(); wBR.position.set(1.3, 0.4, 1.8); 
     policeCar.add(wFL, wFR, wBL, wBR);
 
-    const policeHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 }));
+    // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+    const policeHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), new THREE.MeshBasicMaterial({ color: 0xFFFF88 }));
     policeHeadlight1.position.set(-1.0, 0.7, -2.51); 
     const policeHeadlight2 = policeHeadlight1.clone(); 
     policeHeadlight2.position.x = 1.0; 
@@ -573,8 +579,9 @@ function createAmbulance() {
     const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, flatShading: true });
     const stripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, flatShading: true });
     const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, transparent: true, opacity: 0.8, flatShading: true });
-    const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
-    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
+    // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+    const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88 });
+    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
 
     const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 6.5), bodyMaterial);
     mainBody.position.y = 1.6 / 2 + 0.1;
@@ -597,8 +604,9 @@ function createAmbulance() {
     ambulance.add(rightStripe);
 
     const roofLightGeo = new THREE.BoxGeometry(0.3, 0.2, 0.5);
-    const roofLightMaterialBlue = new THREE.MeshStandardMaterial({ color: 0x0000ff, emissive: 0x0000ff, emissiveIntensity: 0 });
-    const roofLightMaterialRed = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 });
+    // OPTİMİZASYON: emissiveIntensity direkt burada ayarlanmıyor, updateDayCycle'da kontrol ediliyor
+    const roofLightMaterialBlue = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+    const roofLightMaterialRed = new THREE.MeshStandardMaterial({ color: 0xff0000 });
     const roofLight1 = new THREE.Mesh(roofLightGeo, roofLightMaterialBlue);
     roofLight1.position.set(-0.4, 1.6 + 1.6 - 0.1, 0);
     ambulance.add(roofLight1);
@@ -716,7 +724,9 @@ function createBuilding(x, z) {
     const bGr = new THREE.Group(); bGr.add(bMe);
     if (Math.random() < 0.3) {
         const neonWidth = bW * (0.5 + Math.random() * 0.3); const neonHeight = bH * (0.05 + Math.random() * 0.1); const neonColor = NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)];
-        const nG = new THREE.BoxGeometry(neonWidth, neonHeight, 0.5); const nM = new THREE.MeshBasicMaterial({ color: neonColor, emissive: neonColor, emissiveIntensity: 1.0 });
+        const nG = new THREE.BoxGeometry(neonWidth, neonHeight, 0.5); 
+        // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+        const nM = new THREE.MeshBasicMaterial({ color: neonColor });
         const n = new THREE.Mesh(nG, nM); n.position.set(0, Math.random() * (bH/2) - (bH/4), bDe/2 + 0.25); bGr.add(n);
         const pL = new THREE.PointLight(neonColor, 2, 40); pL.position.copy(n.position); bGr.add(pL);
     }
@@ -730,6 +740,9 @@ function moveWorld(currentSpeed){
         if (missionState.status === 'dropoffCinematic' && o === hotelSign) return; 
 
         o.position.z += currentSpeed;
+        // Trafik araçları havuzlandığı için sahnede kalmaya devam edebilir
+        // Sadece görünürlükleri ve pozisyonları resetlenmeli, bu da updateTraffic'te yapılıyor
+        // Buradaki if bloğu, trafiksiz diğer objeler için devam edebilir.
         if(o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200;
         else if(o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
     });
@@ -783,7 +796,7 @@ function updateTraffic(dT){
     const spawnChance = 0.03 + (trafficDifficultyLevel * 0.005);
     
     if(trafficCars.length < maxTrafficCars && Math.random() < spawnChance && hasPlayerMoved) {
-        createTrafficCar();
+        createTrafficCar(); // Şimdi havuzdan araç çekecek
     }
 
     for(let i = trafficCars.length - 1; i >= 0; i--){
@@ -794,7 +807,8 @@ function updateTraffic(dT){
             car.userData.velocity.y -= 9.8 * dT; 
             car.userData.life -= dT;
             if(car.userData.life <= 0){ 
-                scene.remove(car); 
+                car.visible = false; // Havuza geri döndürmeden önce görünmez yap
+                trafficCarPool.push(car); // Havuza geri koy
                 trafficCars.splice(i, 1); 
             }
         } else { 
@@ -825,8 +839,10 @@ function updateTraffic(dT){
                 }
             }
         }
+        // Oyuncudan çok uzaklaşan veya çok geride kalan araçları havuza geri koy
         if(car.position.z > player.position.z + 50 || car.position.z < player.position.z - 500){ 
-            scene.remove(car); 
+            car.visible = false; // Görünmez yap
+            trafficCarPool.push(car); // Havuza geri koy
             trafficCars.splice(i, 1); 
         }
     }
@@ -870,6 +886,13 @@ function checkCollisions(){
     for(let i = trafficCars.length - 1; i >= 0; i--){
         const trafficCar = trafficCars[i];
         if(trafficCar.userData.isHit || trafficCar.userData.type === 'ambulance' || trafficCar.userData.type === 'ramp_truck') continue;
+        
+        // OPTİMİZASYON: Mesafe kontrolü eklendi
+        const distanceThreshold = 20; // Örneğin 20 birimden daha uzaktaki araçları kontrol etme
+        if (player.position.distanceTo(trafficCar.position) > distanceThreshold) {
+            continue; // Çok uzaktaki arabaları atla
+        }
+
         const carBoundingBox = new THREE.Box3().setFromObject(trafficCar);
         if(playerBoundingBox.intersectsBox(carBoundingBox)){
             if(!isCrashSoundPlaying){
@@ -893,6 +916,13 @@ function checkPoliceCollisions() {
     const policeBoundingBox = new THREE.Box3().setFromObject(policeCar);
     for (let i = trafficCars.length - 1; i >= 0; i--) {
         const trafficCar = trafficCars[i]; if (trafficCar.userData.isHit) continue; 
+        
+        // OPTİMİZASYON: Mesafe kontrolü eklendi
+        const distanceThreshold = 30; // Örneğin 30 birimden daha uzaktaki araçları kontrol etme
+        if (policeCar.position.distanceTo(trafficCar.position) > distanceThreshold) {
+            continue; // Çok uzaktaki arabaları atla
+        }
+
         const carBoundingBox = new THREE.Box3().setFromObject(trafficCar);
         if (policeBoundingBox.intersectsBox(carBoundingBox)) {
             policeCar.userData.health -= 10;
@@ -961,7 +991,8 @@ function endGame(reason){
     document.getElementById('game-over-screen').style.display = 'flex';
 }
 
-function createTrafficCar() { 
+// YENİ FONKSİYON: Obje havuzlaması için trafik aracı oluşturma (internal)
+function createTrafficCarInternal() { 
     const vehicleTypes = ['sedan', 'convertible', 'motorcycle', 'chopper', 'limousine', 'ramp_truck', 'ambulance'];
     const typeWeights =  [0.20, 0.15, 0.15, 0.15, 0.05, 0.15, 0.15]; 
     let randomValue = Math.random(); let chosenType; let cumulativeWeight = 0;
@@ -977,23 +1008,12 @@ function createTrafficCar() {
         case 'ambulance': vehicle = createAmbulance(); break;
     }
 
-    if (chosenType === 'ramp_truck') {
-        vehicle.position.x = ROAD_WIDTH / 2 + SIDEWALK_WIDTH - 3;
-    } else {
-        const lanes = [-ROAD_WIDTH / 3, 0, ROAD_WIDTH / 3]; 
-        vehicle.position.x = lanes[Math.floor(Math.random() * lanes.length)];
-    }
-    
-    vehicle.position.z = player.position.z - 300 - Math.random() * 400;
+    // Her aracın tipini userData'ya kaydet
+    vehicle.userData.type = chosenType; // YENİ EKLENEN SATIR
 
-    if (chosenType !== 'ramp_truck' && chosenType !== 'ambulance') {
-        vehicle.userData.laneChangeCooldown = Math.random() * 8 + 4; 
-        vehicle.userData.isChangingLane = false;
-        vehicle.userData.targetX = vehicle.position.x;
-    }
-    
-    const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
-    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
+    // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+    const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88 });
+    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
 
     if (!vehicle.userData.lights) {
         const trafficHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), headlightMaterial);
@@ -1011,11 +1031,66 @@ function createTrafficCar() {
         vehicle.userData.lights = { headlight1: trafficHeadlight1, headlight2: trafficHeadlight2, taillight1: trafficTaillight1, taillight2: trafficTaillight2 };
     }
     
-    trafficCars.push(vehicle); scene.add(vehicle);
+    return vehicle; // Sadece objeyi döndürür
+}
+
+
+// TRAFİK ARACI OLUŞTURMA (HAVUZ KULLANAN)
+function createTrafficCar() { 
+    let vehicle;
+    // Havuzda kullanılabilir bir araç var mı kontrol et
+    if (trafficCarPool.length > 0) {
+        vehicle = trafficCarPool.pop(); // Havuzdan bir araç al
+        vehicle.visible = true; // Görünür yap
+        
+        // Araç özelliklerini sıfırla/yeniden ayarla
+        const chosenType = vehicle.userData.type; // Tipini koru
+        
+        // Pozisyonu, dönüşü ve userData'yı sıfırla
+        vehicle.position.set(0,0,0); // Herhangi bir yerden başlangıç noktası
+        vehicle.rotation.set(0,0,0);
+        vehicle.userData.isHit = false;
+        vehicle.userData.life = 0;
+        vehicle.userData.velocity = new THREE.Vector3();
+        vehicle.userData.spin = 0;
+        vehicle.userData.healedPlayer = false; // Ambulance için
+        
+        // Tipe özgü kullanıcı verilerini yeniden ayarla
+        if (chosenType === 'ramp_truck') {
+            // ramp_truck'a özgü userData resetlemesi
+            vehicle.userData.rampMesh = vehicle.children.find(c => c.geometry instanceof THREE.BoxGeometry && c.geometry.parameters.depth === 7); // Ramp mesh'ini yeniden bul
+        }
+        vehicle.userData.speed = 1.0 + Math.random() * 0.2; // Hızı yeniden rastgele belirle
+        
+    } else {
+        // Havuz boşsa yeni bir araç oluştur
+        vehicle = createTrafficCarInternal(); 
+        scene.add(vehicle); // Sahneye ekle
+    }
+
+    const chosenType = vehicle.userData.type; // createTrafficCarInternal'dan gelen tip
+    
+    if (chosenType === 'ramp_truck') {
+        vehicle.position.x = ROAD_WIDTH / 2 + SIDEWALK_WIDTH - 3;
+    } else {
+        const lanes = [-ROAD_WIDTH / 3, 0, ROAD_WIDTH / 3]; 
+        vehicle.position.x = lanes[Math.floor(Math.random() * lanes.length)];
+    }
+    
+    vehicle.position.z = player.position.z - 300 - Math.random() * 400;
+
+    if (chosenType !== 'ramp_truck' && chosenType !== 'ambulance') {
+        vehicle.userData.laneChangeCooldown = Math.random() * 8 + 4; 
+        vehicle.userData.isChangingLane = false;
+        vehicle.userData.targetX = vehicle.position.x;
+    }
+    
+    trafficCars.push(vehicle);
 }
 
 function createLuxurySedan() { 
     const car = new THREE.Group();
+    car.userData.type = 'sedan'; // YENİ EKLENEN SATIR: Tip bilgisi
     
     const carColor = TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)];
     const carTextureCanvas = document.createElement('canvas');
@@ -1039,7 +1114,9 @@ function createLuxurySedan() {
 }
 
 function createConvertible() { 
-    const car = new THREE.Group(); const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
+    const car = new THREE.Group();
+    car.userData.type = 'convertible'; // YENİ EKLENEN SATIR: Tip bilgisi
+    const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
     const body = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.7, 4.8), material); body.position.y = 0.75; car.add(body);
     const seatMaterial = new THREE.MeshPhongMaterial({ color: 0x552211 }); const seat1 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.8), seatMaterial); seat1.position.set(0, 1.1, 0.5);
     const seat2 = seat1.clone(); seat2.position.z = -0.5; car.add(seat1, seat2);
@@ -1051,7 +1128,9 @@ function createConvertible() {
 }
 
 function createMotorcycle() { 
-    const bike = new THREE.Group(); const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
+    const bike = new THREE.Group();
+    bike.userData.type = 'motorcycle'; // YENİ EKLENEN SATIR: Tip bilgisi
+    const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 1.8), material); body.position.y = 0.7; bike.add(body);
     const wheelGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.2, 12);
     const frontWheel = new THREE.Mesh(wheelGeometry, material); frontWheel.rotation.x = Math.PI / 2; frontWheel.position.set(0, 0.35, -0.9);
@@ -1060,7 +1139,9 @@ function createMotorcycle() {
 }
 
 function createChopper() { 
-    const bike = new THREE.Group(); const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
+    const bike = new THREE.Group();
+    bike.userData.type = 'chopper'; // YENİ EKLENEN SATIR: Tip bilgisi
+    const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 2.2), material); body.position.y = 0.45; bike.add(body);
     const handleBar = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.1), material); handleBar.position.set(0, 1.1, -0.8);
     const handleGrip1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), material); handleGrip1.position.set(-0.55, 1.2, -0.8);
@@ -1073,7 +1154,9 @@ function createChopper() {
 }
 
 function createLimousine() { 
-    const limo = new THREE.Group(); const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
+    const limo = new THREE.Group();
+    limo.userData.type = 'limousine'; // YENİ EKLENEN SATIR: Tip bilgisi
+    const material = new THREE.MeshPhongMaterial({ color: TRAFFIC_CAR_COLORS[Math.floor(Math.random() * TRAFFIC_CAR_COLORS.length)], flatShading: true });
     const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.9, 10.0), material); mainBody.position.y = 0.9; limo.add(mainBody);
     const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 3.0), material); cabin.position.set(0, 1.7, -2.5); limo.add(cabin);
     const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 12); const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111 });
@@ -1085,6 +1168,7 @@ function createLimousine() {
 
 function createRampTruck() {
     const truck = new THREE.Group();
+    truck.userData.type = 'ramp_truck'; // YENİ EKLENEN SATIR: Tip bilgisi
     const cabMaterial = new THREE.MeshPhongMaterial({ color: 0x00A0B0, flatShading: true });
     const flatbedMaterial = new THREE.MeshPhongMaterial({ color: 0xFFC300, flatShading: true });
     const rampMaterial = new THREE.MeshPhongMaterial({ color: 0xFF5733, flatShading: true });
@@ -1119,9 +1203,8 @@ function createRampTruck() {
     const wheelBR2 = createWheel(); wheelBR2.position.set(1.3, 0.5, 4.0);
     truck.add(wheelFL, wheelFR, wheelBL1, wheelBR1, wheelBL2, wheelBR2);
     
-    truck.userData.type = 'ramp_truck';
     truck.userData.speed = 1.0 + Math.random() * 0.2;
-    truck.userData.rampMesh = ramp;
+    truck.userData.rampMesh = ramp; // Ramp mesh'ini userData'ya kaydet
     return truck;
 }
 
@@ -1142,7 +1225,9 @@ function createDebris(position){
 function updateDebris(deltaTime){
     for(let i = debrisParticles.length - 1; i >= 0; i--){
         const debris = debrisParticles[i]; debris.userData.life -= deltaTime * 1.5;
-        if(debris.userData.life <= 0){ scene.remove(debris); debrisParticles.splice(i, 1);
+        // OPTİMİZASYON: Maksimum partikül sınırı kontrolü
+        if(debris.userData.life <= 0 || debrisParticles.length > MAX_DEBRIS_PARTICLES){
+            scene.remove(debris); debrisParticles.splice(i, 1);
         } else {
             debris.position.add(debris.userData.velocity.clone().multiplyScalar(deltaTime));
             debris.material.opacity = debris.userData.life; debris.material.transparent = true;
@@ -1167,7 +1252,9 @@ function createBulletSparks(targetObject) {
 function updateBulletSparks(deltaTime) {
     for (let i = bulletSparks.length - 1; i >= 0; i--) {
         const spark = bulletSparks[i]; spark.userData.life -= deltaTime;
-        if (spark.userData.life <= 0) { scene.remove(spark); bulletSparks.splice(i, 1);
+        // OPTİMİZASYON: Maksimum partikül sınırı kontrolü
+        if (spark.userData.life <= 0 || bulletSparks.length > MAX_BULLET_SPARKS) {
+            scene.remove(spark); bulletSparks.splice(i, 1);
         } else {
             spark.position.add(spark.userData.velocity.clone().multiplyScalar(deltaTime));
             spark.material.opacity = spark.userData.life / 0.3;
@@ -1472,9 +1559,11 @@ function updateDayCycle(deltaTime) {
         if(lightGroup.userData.isHit) return;
         const isNightTime = dayCyclePhases[currentPhaseIndex] === 'NIGHT' || dayCyclePhases[currentPhaseIndex] === 'EVENING';
         const bulb = lightGroup.children.find(child => child instanceof THREE.PointLight); 
-        const emissiveBulb = lightGroup.children.find(child => child.material && child.material.emissive);
+        const emissiveBulb = lightGroup.children.find(child => child.material && child.material.isMeshBasicMaterial); // Material tipi kontrolü
         if (bulb) bulb.intensity = isNightTime ? streetLightGlowFactor * 1.5 : 0;
-        if(emissiveBulb) emissiveBulb.material.emissiveIntensity = isNightTime ? streetLightGlowFactor : 0;
+        // emissiveBulb.material.emissiveIntensity zaten kaldırıldığı için bu satırı kontrol etmenize gerek kalmaz
+        // Eğer BasicMaterial kullanmaya devam ediyorsanız, direkt materyalin rengini değiştirerek de ışıklandırma etkisi verebilirsiniz
+        // if(emissiveBulb) emissiveBulb.material.color.setHex(isNightTime ? 0xffd700 : 0x444444); // Örnek olarak
     });
 
     const isNight = dayCyclePhases[currentPhaseIndex] === 'NIGHT' || dayCyclePhases[currentPhaseIndex] === 'EVENING';
@@ -1482,31 +1571,33 @@ function updateDayCycle(deltaTime) {
     if (player && player.userData.lights) {
         player.userData.lights.headlight1.visible = isNight;
         player.userData.lights.headlight2.visible = isNight;
-        player.userData.lights.taillight1.material.emissiveIntensity = isNight ? 1.8 : 0.2;
-        player.userData.lights.taillight2.material.emissiveIntensity = isNight ? 1.8 : 0.2;
+        // BasicMaterial'da emissiveIntensity olmadığı için direkt color üzerinde oynama yapabiliriz veya visibility kullanabiliriz
+        player.userData.lights.taillight1.material.color.setHex(isNight ? 0xFF0000 : 0x880000); // Kırmızı veya daha soluk kırmızı
+        player.userData.lights.taillight2.material.color.setHex(isNight ? 0xFF0000 : 0x880000);
     }
 
     if (policeCar && policeCar.userData.lights) {
         policeCar.userData.lights.headlight1.visible = isNight;
         policeCar.userData.lights.headlight2.visible = isNight;
-        policeCar.userData.lights.taillight1.material.emissiveIntensity = isNight ? 1.5 : 0.2;
-        policeCar.userData.lights.taillight2.material.emissiveIntensity = isNight ? 1.5 : 0.2;
+        policeCar.userData.lights.taillight1.material.color.setHex(isNight ? 0xbb0000 : 0x660000);
+        policeCar.userData.lights.taillight2.material.color.setHex(isNight ? 0xbb0000 : 0x660000);
     }
 
     trafficCars.forEach(car => {
         if (car.userData.lights) {
             if (car.userData.type === 'ambulance') {
                 const time = clock.getElapsedTime() * 5; 
+                // Standart materyalde emissiveIntensity'yi bu şekilde kontrol etmek daha uygun
                 car.userData.lights.roofLight1.material.emissiveIntensity = Math.sin(time) > 0 ? 1.0 : 0.0; 
                 car.userData.lights.roofLight2.material.emissiveIntensity = Math.sin(time) < 0 ? 1.0 : 0.0;
                 car.userData.lights.roofLight1.visible = isNight;
                 car.userData.lights.roofLight2.visible = isNight;
+            } else { // Diğer trafik araçları için
+                car.userData.lights.headlight1.visible = isNight;
+                car.userData.lights.headlight2.visible = isNight;
+                car.userData.lights.taillight1.material.color.setHex(isNight ? 0xFF0000 : 0x880000);
+                car.userData.lights.taillight2.material.color.setHex(isNight ? 0xFF0000 : 0x880000);
             }
-
-            car.userData.lights.headlight1.visible = isNight;
-            car.userData.lights.headlight2.visible = isNight;
-            car.userData.lights.taillight1.material.emissiveIntensity = isNight ? 1.0 : 0.2;
-            car.userData.lights.taillight2.material.emissiveIntensity = isNight ? 1.0 : 0.2;
         }
     });
 }
@@ -1626,7 +1717,8 @@ function createPalmTree(x, z) {
 
 function createStreetLights() {
     const poleMaterial = new THREE.MeshPhongMaterial({ color: 0x444444 });
-    const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700, emissive: 0xffd700, emissiveIntensity: 1.0 });
+    // OPTİMİZASYON: emissive ve emissiveIntensity kaldırıldı
+    const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
     const spacing = 150;
     for (let i = 0; i < TOTAL_LENGTH / spacing; i++) {
         [-1, 1].forEach(side => {
@@ -1823,6 +1915,15 @@ function initializeGame() {
         scene.add(dirLight); 
         
         createWorld(); 
+        
+        // OPTİMİZASYON: Trafik arabası havuzunu oluştur
+        for(let i = 0; i < 25; i++) { // Örneğin 25 araçlık bir havuz başlat
+            const car = createTrafficCarInternal(); 
+            car.visible = false; // Başlangıçta görünmez olsunlar
+            trafficCarPool.push(car);
+            scene.add(car); // Sahneye ekle, ama kullanılana kadar gizli
+        }
+
         updateHealth();
 
         camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
@@ -1922,7 +2023,8 @@ function animate() {
     if(hasPlayerMoved) gameTime += deltaTime;
     if (areHazardLightsOn) { if(player && player.userData.lights) Object.values(player.userData.lights).forEach(light => {
         if (light.isMesh) {
-            light.visible = Math.sin(clock.getElapsedTime() * 8) > 0;
+            // BasicMaterial'da emissiveIntensity olmadığı için rengi değiştirerek yanıp sönme
+            light.material.color.setHex(Math.sin(clock.getElapsedTime() * 8) > 0 ? 0xFFFF88 : 0xAAAA00); // Sarı veya daha koyu sarı
         } else if (light instanceof THREE.PointLight) {
             light.intensity = Math.sin(clock.getElapsedTime() * 8) > 0 ? 1.5 : 0;
         }
