@@ -1016,8 +1016,7 @@ function createPalmLeavesTexture() {
     ctx.fillRect(0,0,64,32);
     ctx.strokeStyle = '#0a6a4f';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0,16); ctx.lineTo(64,16); ctx.stroke(); // Orta damar
-   } 
+    ctx.beginPath(); ctx.moveTo(0,16); ctx.lineTo(64,16); ctx.stroke(); }
     return new THREE.CanvasTexture(canvas);
 }
 
