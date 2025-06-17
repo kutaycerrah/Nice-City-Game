@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nice City Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="loading-screen">
+        <div id="loading-text">YÜKLENİYOR...</div>
+        <div id="loading-bar-container">
+            <div id="loading-bar"></div>
+        </div>
+        <div id="loading-percentage">0%</div>
+    </div>
+
+    <div id="name-entry-screen">
+        <div class="form-container">
+            <h1>Nice City Game</h1>
+            <p>Oyuna başlamak için bir isim gir.</p>
+            <input type="text" id="player-name-input" placeholder="Oyuncu Adı" maxlength="15">
+            <button id="start-game-button">OYUNU BAŞLAT</button>
+        </div>
+    </div>
+
+    <canvas id="game"></canvas>
+
+    <div id="ui-container">
+        <div id="health-container">
+            <div id="health-bar"></div>
+        </div>
+        <div id="score">SKOR: 0</div>
+        <div id="wanted-level">
+            <span id="star-1"></span>
+            <span id="star-2"></span>
+            <span id="star-3"></span>
+            <span id="star-4"></span>
+            <span id="star-5"></span>
+        </div>
+        <div id="speech-bubbles">
+            <div id="player-speech-bubble" class="speech-bubble"></div>
+            <div id="police-speech-bubble" class="speech-bubble"></div>
+            <div id="julie-speech-bubble" class="speech-bubble"></div>
+        </div>
+    </div>
+
+    <div id="radio-ticker-bar">
+        <p id="radio-ticker-text"></p>
+    </div>
+    
+    <div id="subtitle-bar"></div>
+
+    <div id="mission-container">
+        <div id="mission-text">Yeni bir görev almak için düğmeye bas!</div>
+        <button id="generate-mission-btn">✨ Yeni Görev Al</button>
+    </div>
+
+    <div id="game-over-screen">
+        <h1 id="game-over-text">WASTED</h1>
+    </div>
+
+    <div id="error-display"></div>
+
+    <div id="mobile-controls">
+        <button id="left-btn">&larr;</button>
+        <button id="right-btn">&rarr;</button>
+        <button id="brake-btn">&darr;</button>
+        <button id="accel-btn">&uarr;</button>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
