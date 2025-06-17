@@ -141,7 +141,7 @@ function loadSounds() {
         siren: new Howl({ src: ['sounds/police_sound.ogg'], loop: true, volume: SIREN_VOLUME }),
         radio: new Howl({ src: ['sounds/Vice City Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true }),
         heal_sound: new Howl({ src: ['sounds/spell_heal.ogg'], volume: 0.7 })
-    };
+    }
 }
 
 function loadAssets() {
