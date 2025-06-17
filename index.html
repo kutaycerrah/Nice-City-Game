@@ -69,7 +69,16 @@
         <button id="brake-btn">&darr;</button>
         <button id="accel-btn">&uarr;</button>
     </div>
-<script src="howler.min.js"></script>
-    <script type="module" src="script.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+        }
+    }
+    </script>
+    <script type="module" src="./script.js"></script>
+
 </body>
 </html>
