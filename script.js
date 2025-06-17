@@ -1,8 +1,8 @@
 // YEREL KÜTÜPHANE YÜKLENDİ
 import * as THREE from './three.module.js';
-// FontLoader'ı doğru göreceli yoldan import et
-// three.module.js ile aynı seviyede 'addons' klasörünün içinde olduğunu varsayarız.
-import { FontLoader } from './addons/loaders/FontLoader.js'; 
+// FONTLOADER YOLU SİZİN DOSYA DİZİNİNİZE GÖRE DÜZELTİLDİ:
+// script.js, three.module.js ve 'three' klasörü aynı seviyede olduğu varsayılmıştır.
+import { FontLoader } from './three/addons/loaders/FontLoader.js'; 
 
 
 // --- YARDIMCI FONKSİYON ---
@@ -101,7 +101,7 @@ const CHATTER_INTERVAL = 25, MISSION_PROMPT_INTERVAL = 45;
 let missionHideTimeout = null, lastKeyUpTime = 0;
 const policePhrases = ["Dur! Saga cek!", "Kacabilecegini mi sandin?", "Bu is burada bitti!", "Teslim ol!", "Daha fazla zorluk cikarma!"].map(turkishToEnglish);
 const playerPhrases = ["Haha, cok beklersin!", "Sikiysa yakala!", "Tozumu yut bakalim!", "Beni asla yakalayamazsiniz!", "Bu sehir benim!"].map(turkishToEnglish);
-const julieScaredPhrases = ["Cok hizlisin!", "Dikkat et!", "Polisler pesimizde!", "Korkmaya basliyorum!", "Bizi yakalayacaklar!"].map(turkishToEnglish);
+const julieScaredPhrases = ["Cok hizlisin!", "Dikkat et!", "Polislar pesimizde!", "Korkmaya basliyorum!", "Bizi yakalayacaklar!"].map(turkishToEnglish);
 
 
 async function callGemini(prompt) {
@@ -162,7 +162,7 @@ function loadSounds() {
 
 
 function loadAssets() {
-    // Bu fonksiyon, oyun başlatma sürecinin görsel ilerlemesini göstermek için kullanılabilir.
+    // Bu fonksiyonu, oyun başlatma sürecinin görsel ilerlemesini göstermek için kullanabilirsiniz.
     const loadingBar = document.getElementById('loading-bar');
     const loadingPercentage = document.getElementById('loading-percentage');
     let progress = 0;
