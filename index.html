@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Untitled</title>
+  
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>Grand Traffic Racer - Vice City Pursuit</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="howler.min.js"></script>
+
+</head>
+
+<body>
+
+    <div id="error-display" style="display: none;"></div>
+
+    <div id="debug-info"></div>
+
+    <div id="speech-bubbles-container">
+
+        <div id="player-speech-bubble" class="speech-bubble player"></div>
+
+        <div id="police-speech-bubble" class="speech-bubble police"></div>
+
+        <div id="julie-speech-bubble" class="speech-bubble julie"></div>
+
+    </div>
+
+    <div id="loading-screen">
+
+        <div id="loading-logo">
+
+            <h2 class="studio-name">KuAtAmA Games</h2>
+
+            <h1>GRAND TRAFFIC<br>RACER</h1>
+
+            <h2>Nice City</h2>
+
+        </div>
+
+        <div id="loading-bar-container"><div id="loading-bar"></div></div>
+
+        <div id="loading-percentage">0%</div>
+
+        <div id="creator-credit">Created By Atakan Cerrahoglu</div>
+
+    </div>
+
+    <div id="name-entry-screen">
+
+        <h2>ISMINI GIR</h2>
+
+        <input type="text" id="player-name-input" maxlength="12" placeholder="OYUNCU 1">
+
+        <button id="start-game-button">OYUNA BASLA</button>
+
+    </div>
+
+    <canvas id="game"></canvas>
+
+    <div id="ui-container">
+
+        <div id="left-ui">
+
+            <div id="wanted-level">
+
+                <div id="star-1" class="star"></div><div id="star-2" class="star"></div><div id="star-3" class="star"></div><div id="star-4" class="star"></div><div id="star-5" class="star"></div>
+
+            </div>
+
+            <div id="health-bar-container"><div id="health-bar"></div></div>
+
+        </div>
+
+        <div id="score">SKOR: 0</div>
+
+    </div>
+
+    <div id="mission-container">
+
+        <div id="mission-text">Yeni bir gorev almak icin dugmeye bas!</div>
+
+        <button id="generate-mission-btn">✨ Yeni Gorev Al</button>
+
+    </div>
+
+    <div id="radio-ticker-bar">
+
+        <div id="radio-ticker-text"></div>
+
+    </div>
+
+    <div id="subtitle-bar"></div>
+
+    <div id="game-over-screen">
+
+        <h1 id="game-over-text"></h1>
+
+        <button onclick="location.reload()">Yeniden Basla</button>
+
+    </div>
+
+    <div id="mobile-controls">
+
+        <div id="left-controls"><button id="brake-btn" class="control-btn">&darr;</button><button id="accel-btn" class="control-btn">&uarr;</button></div>
+
+        <div id="right-controls"><button id="left-btn" class="control-btn">&larr;</button><button id="right-btn" class="control-btn">&rarr;</button></div>
+
+    </div>
+
+    <script type="module" src="script.js"></script>
+
+</body>
+
+</html>
+<!-- partial -->
+  
+</body>
+</html>
