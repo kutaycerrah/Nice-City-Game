@@ -455,19 +455,21 @@
             createRain();
             createScenery(); 
         }
-        
+
         function createPlayer() {
             player = new THREE.Group();
 
             // --- DOKU YÜKLEME ---
             const carTexture = textureLoader.load('car_uv_map.png');
+            // Dokunun pikselli ve net görünmesi için filtreleme ayarı
             carTexture.magFilter = THREE.NearestFilter;
-            carTexture.minFilter = THREE.NearestFilter;
+            carTexture.minFilter = THREE.LinearFilter; // Daha iyi bir görünüm için LinearFilter deneyelim
 
             // --- MATERYALLER ---
             const carMaterial = new THREE.MeshPhongMaterial({
                 map: carTexture,
-                flatShading: true
+                flatShading: true,
+                transparent: true // Dokudaki boşlukların şeffaf olması için
             });
             const wheelTireMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
             const wheelDecalMaterial = new THREE.MeshPhongMaterial({ map: textureLoader.load('whell.png'), flatShading: true, transparent: true });
@@ -476,52 +478,43 @@
             
             const carBodyGeo = new THREE.BoxGeometry(3.0, 1.2, 6.0);
 
-            // --- YENİ VE HASSAS UV KOORDİNATLARI ---
+            // --- HASSAS UV KOORDİNATLARI (car_uv_map.png'ye göre yeniden kalibre edildi) ---
             const uv_map = {
-                top:    { u0: 0.01, v0: 0.52, u1: 0.41, v1: 1.0 },
-                bottom: { u0: 0.01, v0: 0.52, u1: 0.41, v1: 1.0 },
-                front:  { u0: 0.48, v0: 0.65, u1: 0.99, v1: 0.95 },
-                rear:   { u0: 0.48, v0: 0.35, u1: 0.99, v1: 0.65 },
-                side:   { u0: 0.01, v0: 0.0,  u1: 0.48, v1: 0.3 }
+                top:    { u0: 0.01, v0: 0.52, u1: 0.41, v1: 0.99 },
+                side:   { u0: 0.01, v0: 0.0,  u1: 0.5, v1: 0.28 },
+                front:  { u0: 0.5, v0: 0.69, u1: 0.98, v1: 0.99 },
+                rear:   { u0: 0.5, v0: 0.38, u1: 0.98, v1: 0.68 }
             };
 
-            // DÜZELTME: UV dizisinin var olduğundan emin oluyoruz
-            if (!carBodyGeo.faceVertexUvs) {
-                carBodyGeo.faceVertexUvs = [[]];
-            } else if (!carBodyGeo.faceVertexUvs[0]) {
-                carBodyGeo.faceVertexUvs[0] = [];
-            }
-            
             const uvs = carBodyGeo.faceVertexUvs[0];
             uvs.length = 0; // Diziyi temizle
 
-            const setUVs = (faceIndex, u0, v0, u1, v1, u2, v2) => {
-                uvs[faceIndex] = [
-                    new THREE.Vector2(u0, v0),
-                    new THREE.Vector2(u1, v1),
-                    new THREE.Vector2(u2, v2)
-                ];
-            };
+            // Yüzeylere UV ataması (Düzeltilmiş köşe sıralaması ile)
+            // BoxGeometry Yüzey Sırası: Sağ(+X), Sol(-X), Üst(+Y), Alt(-Y), Ön(+Z), Arka(-Z)
+            
+            // Sağ Taraf (+X)
+            uvs.push(new THREE.Vector2(uv_map.side.u1, uv_map.side.v1), new THREE.Vector2(uv_map.side.u0, uv_map.side.v0), new THREE.Vector2(uv_map.side.u1, uv_map.side.v0));
+            uvs.push(new THREE.Vector2(uv_map.side.u0, uv_map.side.v1), new THREE.Vector2(uv_map.side.u0, uv_map.side.v0), new THREE.Vector2(uv_map.side.u1, uv_map.side.v1));
 
-            // Yüzeylere UV ataması (Daha güvenli yöntem)
-            // Sağ Taraf
-            setUVs(0, uv_map.side.u0, uv_map.side.v1, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
-            setUVs(1, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
-            // Sol Taraf
-            setUVs(2, uv_map.side.u0, uv_map.side.v1, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
-            setUVs(3, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
-            // Üst Taraf
-            setUVs(4, uv_map.top.u0, uv_map.top.v1, uv_map.top.u0, uv_map.top.v0, uv_map.top.u1, uv_map.top.v1);
-            setUVs(5, uv_map.top.u0, uv_map.top.v0, uv_map.top.u1, uv_map.top.v0, uv_map.top.u1, uv_map.top.v1);
-            // Alt Taraf
-            setUVs(6, uv_map.bottom.u0, uv_map.bottom.v1, uv_map.bottom.u0, uv_map.bottom.v0, uv_map.bottom.u1, uv_map.bottom.v1);
-            setUVs(7, uv_map.bottom.u0, uv_map.bottom.v0, uv_map.bottom.u1, uv_map.bottom.v0, uv_map.bottom.u1, uv_map.bottom.v1);
-            // Ön Taraf
-            setUVs(8, uv_map.front.u0, uv_map.front.v1, uv_map.front.u0, uv_map.front.v0, uv_map.front.u1, uv_map.front.v1);
-            setUVs(9, uv_map.front.u0, uv_map.front.v0, uv_map.front.u1, uv_map.front.v0, uv_map.front.u1, uv_map.front.v1);
-            // Arka Taraf
-            setUVs(10, uv_map.rear.u0, uv_map.rear.v1, uv_map.rear.u0, uv_map.rear.v0, uv_map.rear.u1, uv_map.rear.v1);
-            setUVs(11, uv_map.rear.u0, uv_map.rear.v0, uv_map.rear.u1, uv_map.rear.v0, uv_map.rear.u1, uv_map.rear.v1);
+            // Sol Taraf (-X)
+            uvs.push(new THREE.Vector2(uv_map.side.u0, uv_map.side.v1), new THREE.Vector2(uv_map.side.u1, uv_map.side.v0), new THREE.Vector2(uv_map.side.u0, uv_map.side.v0));
+            uvs.push(new THREE.Vector2(uv_map.side.u1, uv_map.side.v1), new THREE.Vector2(uv_map.side.u1, uv_map.side.v0), new THREE.Vector2(uv_map.side.u0, uv_map.side.v1));
+            
+            // Üst Taraf (+Y)
+            uvs.push(new THREE.Vector2(uv_map.top.u1, uv_map.top.v1), new THREE.Vector2(uv_map.top.u0, uv_map.top.v0), new THREE.Vector2(uv_map.top.u1, uv_map.top.v0));
+            uvs.push(new THREE.Vector2(uv_map.top.u0, uv_map.top.v1), new THREE.Vector2(uv_map.top.u0, uv_map.top.v0), new THREE.Vector2(uv_map.top.u1, uv_map.top.v1));
+
+            // Alt Taraf (-Y)
+            uvs.push(new THREE.Vector2(uv_map.top.u1, uv_map.top.v1), new THREE.Vector2(uv_map.top.u0, uv_map.top.v0), new THREE.Vector2(uv_map.top.u1, uv_map.top.v0));
+            uvs.push(new THREE.Vector2(uv_map.top.u0, uv_map.top.v1), new THREE.Vector2(uv_map.top.u0, uv_map.top.v0), new THREE.Vector2(uv_map.top.u1, uv_map.top.v1));
+           
+            // Ön Taraf (+Z) - Modelde bu -Z yönü oluyor
+            uvs.push(new THREE.Vector2(uv_map.rear.u0, uv_map.rear.v1), new THREE.Vector2(uv_map.rear.u1, uv_map.rear.v0), new THREE.Vector2(uv_map.rear.u0, uv_map.rear.v0));
+            uvs.push(new THREE.Vector2(uv_map.rear.u1, uv_map.rear.v1), new THREE.Vector2(uv_map.rear.u1, uv_map.rear.v0), new THREE.Vector2(uv_map.rear.u0, uv_map.rear.v1));
+
+            // Arka Taraf (-Z) - Modelde bu +Z yönü oluyor
+            uvs.push(new THREE.Vector2(uv_map.front.u0, uv_map.front.v1), new THREE.Vector2(uv_map.front.u1, uv_map.front.v0), new THREE.Vector2(uv_map.front.u0, uv_map.front.v0));
+            uvs.push(new THREE.Vector2(uv_map.front.u1, uv_map.front.v1), new THREE.Vector2(uv_map.front.u1, uv_map.front.v0), new THREE.Vector2(uv_map.front.u0, uv_map.front.v1));
             
             carBodyGeo.uvsNeedUpdate = true;
             
@@ -548,13 +541,14 @@
             const wBR = createWheel(false); wBR.position.set(1.5, 0.5, 2.0);
             player.add(wFL, wFR, wBL, wBR);
             
+            // --- OYUNCU BAŞLANGIÇ POZİSYONU ---
             player.position.set(ROAD_WIDTH / 2 - 2, 0, 5);
             player.rotation.y = -Math.PI / 16;
             player.userData.isJumping = false;
             player.userData.verticalVelocity = 0;
             scene.add(player);
         }
-         
+            
         function createPoliceCar() {
             if (policeCar) return;
             policeCar = new THREE.Group();
