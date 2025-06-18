@@ -199,7 +199,7 @@ canvas {
     border: 2px solid rgba(255, 255, 255, 0.5);
     color: white;
     border-radius: 50%;
-    touch-action: manipulation; /* Prevents double-tap zoom */
+    touch-action: manipulation;
 }
 #mobile-controls button#accel-btn {
     position: absolute;
@@ -264,7 +264,7 @@ canvas {
     opacity: 0;
     transition: opacity 0.5s;
     z-index: 50;
-    overflow: hidden; /* For ticker */
+    overflow: hidden;
 }
 
 #subtitle-bar.visible, #radio-ticker-bar.visible {
@@ -328,4 +328,4 @@ canvas {
 #error-display pre {
     white-space: pre-wrap;
     word-wrap: break-word;
-}
+    }
