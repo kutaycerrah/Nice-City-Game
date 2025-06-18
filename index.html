@@ -456,67 +456,75 @@
             createScenery(); 
         }
 
-        function createPlayer() {
+       function createPlayer() {
             player = new THREE.Group();
 
-            // --- DOKU VE MATERYALLER ---
-            const carTexture = textureLoader.load('car_uv_map.png');
-            carTexture.magFilter = THREE.NearestFilter;
-            carTexture.minFilter = THREE.LinearFilter;
+            // --- DOKU YÜKLEME (Parça Parça) ---
+            const frontTexture = textureLoader.load('car.front.png');
+            const rearTexture = textureLoader.load('car.rear.png');
+            const sideTexture = textureLoader.load('car.side.png');
 
-            const carMaterial = new THREE.MeshPhongMaterial({
-                map: carTexture,
-                flatShading: true,
-            });
+            // --- MATERYALLER ---
+            // Her parça için ayrı materyal oluşturuyoruz
+            const frontMaterial = new THREE.MeshPhongMaterial({ map: frontTexture, flatShading: true });
+            const rearMaterial = new THREE.MeshPhongMaterial({ map: rearTexture, flatShading: true });
+            const sideMaterial = new THREE.MeshPhongMaterial({ map: sideTexture, flatShading: true });
 
+            // Dokusu olmayan parçalar için standart materyaller
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xD40000, flatShading: true });
+            const secondaryMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true });
+            const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, transparent: true, opacity: 0.8, flatShading: true });
             const wheelTireMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
             const wheelDecalMaterial = new THREE.MeshPhongMaterial({ map: textureLoader.load('whell.png'), flatShading: true, transparent: true });
 
-            // --- ARABA MODELİ VE UV HARİTALAMA (NİHAİ VERSİYON) ---
+            // --- ARAÇ MODELİNİ OLUŞTURMA VE KAPLAMA ---
             
-            // Arabanın ana gövdesi için bir kutu geometrisi oluşturuyoruz.
-            const carBodyGeo = new THREE.BoxGeometry(3.0, 1.2, 6.0);
+            // Ana Gövde: Bu parçanın sağ ve soluna YAN GÖRÜNÜM dokusunu atıyoruz.
+            // Üstü, altı, önü ve arkası ise düz kırmızı olacak.
+            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.6, 6.0), [
+                sideMaterial, // Sağ Taraf
+                sideMaterial, // Sol Taraf
+                bodyMaterial, // Üst
+                bodyMaterial, // Alt
+                bodyMaterial, // Ön
+                bodyMaterial  // Arka
+            ]);
+            mainBody.position.y = 0.6; 
+            mainBody.castShadow = true; 
+            player.add(mainBody);
 
-            // Geometrinin UV haritasını (doku koordinatları) manuel olarak düzenleyeceğiz.
-            // Bu, doku atlasındaki her bir parçanın, kutunun doğru yüzeyine gelmesini sağlar.
-            const uvs = carBodyGeo.getAttribute('uv');
+            // Ön Kaput: Bu parçaya ÖN GÖRÜNÜM dokusunu atıyoruz.
+            const frontHood = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 2.0), frontMaterial);
+            frontHood.position.set(0, 0.7, -3.0); 
+            player.add(frontHood);
+
+            // Arka Güverte: Bu parçaya ARKA GÖRÜNÜM dokusunu atıyoruz.
+            const rearDeck = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 2.0), rearMaterial);
+            rearDeck.position.set(0, 0.7, 3.0); 
+            player.add(rearDeck);
             
-            // Doku atlasındaki parçaların koordinatları (0-1 arası)
-            // Sizin car_uv_map.jpg dosyanıza göre hassas olarak ayarlandı.
-            const uv_coords = {
-                side_right: [0.52, 0.01,   1, 0.28], // Yan görünüm (sağ taraf için ters çevrilecek)
-                side_left:  [0.0, 0.01,  0.48, 0.28], // Yan görünüm (sol taraf)
-                top:        [0.0, 0.52,  0.42, 0.99], // Üst görünüm
-                bottom:     [0.0, 0.52,  0.42, 0.99], // Alt görünüm (görünmeyeceği için üst ile aynı)
-                front:      [0.49, 0.7,  0.98, 1.0],  // Ön görünüm
-                back:       [0.49, 0.37, 0.98, 0.67]  // Arka görünüm
-            };
+            // Kabin ve diğer parçalar düz renk kalıyor
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 2.5), bodyMaterial);
+            cabin.position.set(0, 1.0, 0.5); 
+            player.add(cabin);
 
-            // Her yüzeyin 4 köşesi (vertex) için UV koordinatlarını atayan fonksiyon
-            const applyUVs = (faceIndex, coords) => {
-                const [u0, v0, u1, v1] = coords;
-                const i = faceIndex * 4;
-                uvs.setXY(i,     u0, v1); // Sol üst
-                uvs.setXY(i + 1, u1, v1); // Sağ üst
-                uvs.setXY(i + 2, u0, v0); // Sol alt
-                uvs.setXY(i + 3, u1, v0); // Sağ alt
-            };
+            const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), windowMaterial);
+            windshield.position.set(0, 1.2, -0.7); 
+            player.add(windshield);
 
-            // BoxGeometry Yüzey Sırası: Sağ(+X), Sol(-X), Üst(+Y), Alt(-Y), Ön(+Z), Arka(-Z)
-            applyUVs(0, uv_coords.side_right); // Sağ
-            applyUVs(1, uv_coords.side_left);  // Sol
-            applyUVs(2, uv_coords.top);        // Üst
-            applyUVs(3, uv_coords.bottom);     // Alt
-            applyUVs(4, uv_coords.front);      // Ön (+Z, modelde aracın arkası)
-            applyUVs(5, uv_coords.back);       // Arka (-Z, modelde aracın önü)
+            const rearWindow = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), windowMaterial);
+            rearWindow.position.set(0, 1.2, 1.7); 
+            player.add(rearWindow);
 
-            uvs.needsUpdate = true;
-            
-            const carBody = new THREE.Mesh(carBodyGeo, carMaterial);
-            carBody.position.y = 0.6;
-            player.add(carBody);
+            const spoiler = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.6), secondaryMaterial);
+            spoiler.position.set(0, 1.0, 4.2); 
+            player.add(spoiler);
 
-            // TEKERLEKLER
+            const diffuser = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 0.2), secondaryMaterial);
+            diffuser.position.set(0, 0.2, 3.0); 
+            player.add(diffuser);
+
+            // Tekerlekler
             const createWheel = (isLeft) => {
                 const wheelGroup = new THREE.Group();
                 const wheelTire = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16), wheelTireMaterial);
@@ -529,13 +537,12 @@
                 wheelGroup.rotation.z = Math.PI / 2;
                 return wheelGroup;
             };
-            const wFL = createWheel(true); wFL.position.set(-1.5, 0.5, -2.0);
-            const wFR = createWheel(false); wFR.position.set(1.5, 0.5, -2.0);
-            const wBL = createWheel(true); wBL.position.set(-1.5, 0.5, 2.0);
-            const wBR = createWheel(false); wBR.position.set(1.5, 0.5, 2.0);
+            const wFL = createWheel(true); wFL.position.set(-1.6, 0.5, -2.0);
+            const wFR = createWheel(false); wFR.position.set(1.6, 0.5, -2.0);
+            const wBL = createWheel(true); wBL.position.set(-1.6, 0.5, 2.0);
+            const wBR = createWheel(false); wBR.position.set(1.6, 0.5, 2.0);
             player.add(wFL, wFR, wBL, wBR);
             
-            // --- OYUNCU BAŞLANGIÇ POZİSYONU ---
             player.position.set(ROAD_WIDTH / 2 - 2, 0, 5);
             player.rotation.y = -Math.PI / 16;
             player.userData.isJumping = false;
