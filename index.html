@@ -1,84 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nice City Game</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>Grand Traffic Racer - Vice City Pursuit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+    <style>
+        /* CSS KODU BURADAYDI */
+    </style>
 </head>
 <body>
+    <div id="error-display" style="display: none;"></div>
+    <div id="debug-info"></div>
+    <div id="speech-bubbles-container">
+        <div id="player-speech-bubble" class="speech-bubble player"></div>
+        <div id="police-speech-bubble" class="speech-bubble police"></div>
+        <div id="julie-speech-bubble" class="speech-bubble julie"></div>
+    </div>
+
     <div id="loading-screen">
-        <div id="loading-text">YÜKLENİYOR...</div>
-        <div id="loading-bar-container">
-            <div id="loading-bar"></div>
+        <div id="loading-logo">
+            <h2 class="studio-name">KuAtAmA Games</h2>
+            <h1>GRAND TRAFFIC<br>RACER</h1>
+            <h2>Nice City</h2>
         </div>
+        <div id="loading-bar-container"><div id="loading-bar"></div></div>
         <div id="loading-percentage">0%</div>
+        <div id="creator-credit">Created By Atakan Cerrahoglu</div>
     </div>
-
     <div id="name-entry-screen">
-        <div class="form-container">
-            <h1>Nice City Game</h1>
-            <p>Oyuna başlamak için bir isim gir.</p>
-            <input type="text" id="player-name-input" placeholder="Oyuncu Adı" maxlength="15">
-            <button id="start-game-button">OYUNU BAŞLAT</button>
-        </div>
+        <h2>ISMINI GIR</h2>
+        <input type="text" id="player-name-input" maxlength="12" placeholder="OYUNCU 1">
+        <button id="start-game-button">OYUNA BASLA</button>
     </div>
-
+    
     <canvas id="game"></canvas>
-
     <div id="ui-container">
-        <div id="health-container">
-            <div id="health-bar"></div>
+        <div id="left-ui">
+            <div id="wanted-level">
+                <div id="star-1" class="star"></div><div id="star-2" class="star"></div><div id="star-3" class="star"></div><div id="star-4" class="star"></div><div id="star-5" class="star"></div>
+            </div>
+            <div id="health-bar-container"><div id="health-bar"></div></div>
         </div>
         <div id="score">SKOR: 0</div>
-        <div id="wanted-level">
-            <span id="star-1"></span>
-            <span id="star-2"></span>
-            <span id="star-3"></span>
-            <span id="star-4"></span>
-            <span id="star-5"></span>
-        </div>
-        <div id="speech-bubbles">
-            <div id="player-speech-bubble" class="speech-bubble"></div>
-            <div id="police-speech-bubble" class="speech-bubble"></div>
-            <div id="julie-speech-bubble" class="speech-bubble"></div>
-        </div>
+    </div>
+
+    <div id="mission-container">
+        <div id="mission-text">Yeni bir gorev almak icin dugmeye bas!</div>
+        <button id="generate-mission-btn">✨ Yeni Gorev Al</button>
     </div>
 
     <div id="radio-ticker-bar">
-        <p id="radio-ticker-text"></p>
+        <div id="radio-ticker-text"></div>
     </div>
-    
+
     <div id="subtitle-bar"></div>
 
-    <div id="mission-container">
-        <div id="mission-text">Yeni bir görev almak için düğmeye bas!</div>
-        <button id="generate-mission-btn">✨ Yeni Görev Al</button>
-    </div>
-
     <div id="game-over-screen">
-        <h1 id="game-over-text">WASTED</h1>
+        <h1 id="game-over-text"></h1>
+        <button onclick="location.reload()">Yeniden Basla</button>
     </div>
-
-    <div id="error-display"></div>
-
     <div id="mobile-controls">
-        <button id="left-btn">&larr;</button>
-        <button id="right-btn">&rarr;</button>
-        <button id="brake-btn">&darr;</button>
-        <button id="accel-btn">&uarr;</button>
+        <div id="left-controls"><button id="brake-btn" class="control-btn">&darr;</button><button id="accel-btn" class="control-btn">&uarr;</button></div>
+        <div id="right-controls"><button id="left-btn" class="control-btn">&larr;</button><button id="right-btn" class="control-btn">&rarr;</button></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
-        }
-    }
+    <script type="module">
+        // JAVASCRIPT KODU BURADAYDI
     </script>
-    <script type="module" src="./script.js"></script>
-
 </body>
 </html>
