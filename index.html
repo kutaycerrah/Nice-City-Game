@@ -455,7 +455,6 @@
             createRain();
             createScenery(); 
         }
-        
         function createPlayer() {
             player = new THREE.Group();
 
@@ -477,7 +476,6 @@
             const carBodyGeo = new THREE.BoxGeometry(3.0, 1.2, 6.0);
 
             // --- YENİ VE HASSAS UV KOORDİNATLARI ---
-            // Sizin `car_uv_map.png` dosyanıza göre ayarlandı
             const uv_map = {
                 top:    { u0: 0.01, v0: 0.52, u1: 0.41, v1: 1.0 },
                 bottom: { u0: 0.01, v0: 0.52, u1: 0.41, v1: 1.0 },
@@ -486,41 +484,43 @@
                 side:   { u0: 0.01, v0: 0.0,  u1: 0.48, v1: 0.3 }
             };
 
-            const mapUVs = (face_uvs, {u0, v0, u1, v1}) => {
-                return [
+            // DÜZELTME: UV dizisinin var olduğundan emin oluyoruz
+            if (!carBodyGeo.faceVertexUvs) {
+                carBodyGeo.faceVertexUvs = [[]];
+            } else if (!carBodyGeo.faceVertexUvs[0]) {
+                carBodyGeo.faceVertexUvs[0] = [];
+            }
+            
+            const uvs = carBodyGeo.faceVertexUvs[0];
+            uvs.length = 0; // Diziyi temizle
+
+            const setUVs = (faceIndex, u0, v0, u1, v1, u2, v2) => {
+                uvs[faceIndex] = [
                     new THREE.Vector2(u0, v0),
-                    new THREE.Vector2(u1, v0),
-                    new THREE.Vector2(u0, v1),
-                    new THREE.Vector2(u1, v1)
+                    new THREE.Vector2(u1, v1),
+                    new THREE.Vector2(u2, v2)
                 ];
             };
 
-            const top_uvs    = mapUVs(carBodyGeo.faceVertexUvs[0], uv_map.top);
-            const bottom_uvs = mapUVs(carBodyGeo.faceVertexUvs[0], uv_map.bottom);
-            const front_uvs  = mapUVs(carBodyGeo.faceVertexUvs[0], uv_map.front);
-            const rear_uvs   = mapUVs(carBodyGeo.faceVertexUvs[0], uv_map.rear);
-            const side_uvs   = mapUVs(carBodyGeo.faceVertexUvs[0], uv_map.side);
-            
-            carBodyGeo.faceVertexUvs[0] = [];
-            
-            // BoxGeometry Yüzey Sırası: right, left, top, bottom, front, back
-            carBodyGeo.faceVertexUvs[0][0] = [side_uvs[2], side_uvs[0], side_uvs[3]]; // right
-            carBodyGeo.faceVertexUvs[0][1] = [side_uvs[0], side_uvs[1], side_uvs[3]];
-
-            carBodyGeo.faceVertexUvs[0][2] = [side_uvs[2], side_uvs[0], side_uvs[3]]; // left
-            carBodyGeo.faceVertexUvs[0][3] = [side_uvs[0], side_uvs[1], side_uvs[3]];
-
-            carBodyGeo.faceVertexUvs[0][4] = [top_uvs[2], top_uvs[0], top_uvs[3]]; // top
-            carBodyGeo.faceVertexUvs[0][5] = [top_uvs[0], top_uvs[1], top_uvs[3]];
-
-            carBodyGeo.faceVertexUvs[0][6] = [bottom_uvs[2], bottom_uvs[0], bottom_uvs[3]]; // bottom
-            carBodyGeo.faceVertexUvs[0][7] = [bottom_uvs[0], bottom_uvs[1], bottom_uvs[3]];
-
-            carBodyGeo.faceVertexUvs[0][8] = [front_uvs[2], front_uvs[0], front_uvs[3]]; // front
-            carBodyGeo.faceVertexUvs[0][9] = [front_uvs[0], front_uvs[1], front_uvs[3]];
-            
-            carBodyGeo.faceVertexUvs[0][10] = [rear_uvs[2], rear_uvs[0], rear_uvs[3]]; // back
-            carBodyGeo.faceVertexUvs[0][11] = [rear_uvs[0], rear_uvs[1], rear_uvs[3]];
+            // Yüzeylere UV ataması (Daha güvenli yöntem)
+            // Sağ Taraf
+            setUVs(0, uv_map.side.u0, uv_map.side.v1, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
+            setUVs(1, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
+            // Sol Taraf
+            setUVs(2, uv_map.side.u0, uv_map.side.v1, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
+            setUVs(3, uv_map.side.u0, uv_map.side.v0, uv_map.side.u1, uv_map.side.v0, uv_map.side.u1, uv_map.side.v1);
+            // Üst Taraf
+            setUVs(4, uv_map.top.u0, uv_map.top.v1, uv_map.top.u0, uv_map.top.v0, uv_map.top.u1, uv_map.top.v1);
+            setUVs(5, uv_map.top.u0, uv_map.top.v0, uv_map.top.u1, uv_map.top.v0, uv_map.top.u1, uv_map.top.v1);
+            // Alt Taraf
+            setUVs(6, uv_map.bottom.u0, uv_map.bottom.v1, uv_map.bottom.u0, uv_map.bottom.v0, uv_map.bottom.u1, uv_map.bottom.v1);
+            setUVs(7, uv_map.bottom.u0, uv_map.bottom.v0, uv_map.bottom.u1, uv_map.bottom.v0, uv_map.bottom.u1, uv_map.bottom.v1);
+            // Ön Taraf
+            setUVs(8, uv_map.front.u0, uv_map.front.v1, uv_map.front.u0, uv_map.front.v0, uv_map.front.u1, uv_map.front.v1);
+            setUVs(9, uv_map.front.u0, uv_map.front.v0, uv_map.front.u1, uv_map.front.v0, uv_map.front.u1, uv_map.front.v1);
+            // Arka Taraf
+            setUVs(10, uv_map.rear.u0, uv_map.rear.v1, uv_map.rear.u0, uv_map.rear.v0, uv_map.rear.u1, uv_map.rear.v1);
+            setUVs(11, uv_map.rear.u0, uv_map.rear.v0, uv_map.rear.u1, uv_map.rear.v0, uv_map.rear.u1, uv_map.rear.v1);
             
             carBodyGeo.uvsNeedUpdate = true;
             
@@ -553,7 +553,7 @@
             player.userData.verticalVelocity = 0;
             scene.add(player);
         }
-
+         
         function createPoliceCar() {
             if (policeCar) return;
             policeCar = new THREE.Group();
