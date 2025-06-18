@@ -67,7 +67,7 @@
             font-family: 'Dancing Script', cursive;
             font-size: 4vw;
             color: white; 
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
         }
         @media (min-width: 768px) {
             #creator-credit {
@@ -322,7 +322,7 @@
         const ENGINE_VOL_MAX = 0.4; const ENGINE_VOL_MIN = 0.1; const SIREN_VOLUME = 0.5;
 
         // --- GLOBAL DEĞİŞKENLER ---
-        let scene, camera, renderer, clock, textureLoader; // textureLoader eklendi
+        let scene, camera, renderer, clock, textureLoader;
         let player, policeCar = null, sirenLightRed, sirenLightBlue, road;
         let sounds;
         let roadLines = [], buildings = [], palmTrees = [], guardRails = [], trafficCars = [], streetLights = [], statues = [], debrisParticles = [], rain, bulletSparks = [];
@@ -335,7 +335,7 @@
         let pedestrians = [];
         const PEDESTRIAN_SKIN_COLORS = ['#f2d5b1', '#c68642', '#8d5524', '#f5cba7', '#a16e4b'];
         const PEDESTRIAN_SHIRT_COLORS = [0x69d2e7, 0xa7dbd8, 0xf38630, 0xfa6900, 0xff4e50, 0xf9d423, 0xf8b195, 0xc06c84, 0xffffff, 0x333333];
-        const PEDESTRIAN_PANTS_COLORS = [0x004d80, 0x333333, 'beige', 0x654321, 0x444444]; // DÜZELTİLDİ
+        const PEDESTRIAN_PANTS_COLORS = [0x004d80, 0x333333, 'beige', 0x654321, 0x444444];
         let flyingDebris = [];
         
         // --- SİNEMATİK DEĞİŞKENLERİ ---
@@ -388,7 +388,7 @@
                 crash: new Howl({ src: ['https://actions.google.com/sounds/v1/impacts/crash.ogg'], volume: 0.5 }),
                 siren: new Howl({ src: ['https://github.com/atakancerrahoglu/Nice-city/raw/refs/heads/main/police_sound.ogg'], loop: true, volume: SIREN_VOLUME }),
                 radio: new Howl({ src: ['https://github.com/atakancerrahoglu/Nice-city/raw/refs/heads/main/Vice%20City%20Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true }),
-                heal_sound: new Howl({ src: ['https://actions.google.com/sounds/v1/fantasy/spell_heal.ogg'], volume: 0.7 }) 
+                heal_sound: new Howl({ src: ['https://actions.google.com/sounds/v1/fantasy/spell_heal.ogg'], volume: 0.7 })
             };
         }
 
@@ -451,72 +451,141 @@
             createRoadAndSidewalks(); 
             createRoadLines(); 
             createStreetLights(); 
-            createPlayer(); 
-            createRain(); 
+            createPlayer();
+            createRain();
             createScenery(); 
         }
         
         function createPlayer() {
             player = new THREE.Group();
 
-            // --- DOKU YÜKLEME İŞLEMLERİ ---
+            // --- DOKU YÜKLEME (TÜM PARÇALAR) ---
             const frontTexture = textureLoader.load('car.front.png');
-            const rearTexture = textureLoader.load('car.rear.png'); // TAVSİYE: Bu dokunun boyutunu 1024x1024 gibi 2'nin katı bir boyuta getirin.
-            const sideTexture = textureLoader.load('car.side.png');   // TAVSİYE: Bu dokunun boyutunu 1024x512 gibi 2'nin katı bir boyuta getirin.
+            const rearTexture = textureLoader.load('car.rear.png');
+            const sideTexture = textureLoader.load('car.side.png');
+            const roofTexture = textureLoader.load('roof.png');
+            const spoilerTexture = textureLoader.load('spoiler.png');
+            const wheelTexture = textureLoader.load('whell.png'); // Dosya adını sizin verdiğiniz gibi 'whell.png' olarak kullandım
 
-            // --- YENİ MATERYALLER OLUŞTURMA ---
+            // --- MATERYALLER ---
             const frontMaterial = new THREE.MeshPhongMaterial({ map: frontTexture, flatShading: true });
             const rearMaterial = new THREE.MeshPhongMaterial({ map: rearTexture, flatShading: true });
             const sideMaterial = new THREE.MeshPhongMaterial({ map: sideTexture, flatShading: true });
-
-            // --- ESKİ MATERYALLER (Dokusu olmayan parçalar için) ---
+            const roofMaterial = new THREE.MeshPhongMaterial({ map: roofTexture, flatShading: true });
+            const spoilerMaterial = new THREE.MeshPhongMaterial({ map: spoilerTexture, flatShading: true });
+            const wheelDecalMaterial = new THREE.MeshPhongMaterial({ map: wheelTexture, flatShading: true, transparent: true });
+            
             const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xD40000, flatShading: true });
-            const secondaryMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true });
+            const blackMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true });
             const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, transparent: true, opacity: 0.8, flatShading: true });
-            
-            // --- ARAÇ PARÇALARINA YENİ MATERYALLERİ ATAMA ---
-            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.6, 6.0), sideMaterial);
-            mainBody.position.y = 0.6; mainBody.castShadow = true; player.add(mainBody);
+            const wheelTireMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
 
-            const frontHood = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 2.0), frontMaterial);
-            frontHood.position.set(0, 0.7, -3.0); player.add(frontHood);
-            
-            const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 2.5), bodyMaterial);
-            cabin.position.set(0, 1.0, 0.5); player.add(cabin);
+            // --- DETAYLANDIRILMIŞ ARABA MODELİ ---
 
-            const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), windowMaterial);
-            windshield.position.set(0, 1.2, -0.7); player.add(windshield);
+            // 1. ÖN KAPUT (DOKULU)
+            const frontHood = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.4, 2.0), frontMaterial);
+            frontHood.position.set(0, 0.6, -2.0);
+            player.add(frontHood);
+
+            // 2. ARKA KISIM (DOKULU)
+            const rearDeck = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.4, 2.2), rearMaterial);
+            rearDeck.position.set(0, 0.6, 2.1);
+            player.add(rearDeck);
+
+            // 3. KABİN ve CAMLAR
+            const cabinGeo = new THREE.BoxGeometry(2.4, 0.8, 2.5);
+            const cabinMaterials = [
+                bodyMaterial, // right
+                bodyMaterial, // left
+                roofMaterial, // top
+                bodyMaterial, // bottom
+                bodyMaterial, // front
+                bodyMaterial  // back
+            ];
+            const cabin = new THREE.Mesh(cabinGeo, cabinMaterials);
+            cabin.position.set(0, 1.2, 0);
+            player.add(cabin);
             
-            const rearWindow = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), windowMaterial);
-            rearWindow.position.set(0, 1.2, 1.7); player.add(rearWindow);
+            const windshield = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.7), windowMaterial);
+            windshield.position.set(0, 1.3, -1.25);
+            windshield.rotation.x = -Math.PI / 12;
+            player.add(windshield);
             
-            const rearDeck = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 2.0), rearMaterial);
-            rearDeck.position.set(0, 0.7, 3.0); player.add(rearDeck);
+            const rearWindow = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.7), windowMaterial);
+            rearWindow.position.set(0, 1.3, 1.25);
+            rearWindow.rotation.x = Math.PI / 10;
+            player.add(rearWindow);
+
+            // 4. YAN PANELLER (KAPILAR DOKULU, GERİSİ RENKLİ)
+            const doorGeo = new THREE.BoxGeometry(0.1, 0.8, 2.8);
+            const leftDoor = new THREE.Mesh(doorGeo, sideMaterial);
+            leftDoor.position.set(-1.45, 0.8, 0);
+            player.add(leftDoor);
             
-            const spoiler = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.6), secondaryMaterial);
-            spoiler.position.set(0, 1.0, 4.2); player.add(spoiler);
+            const rightDoor = new THREE.Mesh(doorGeo, sideMaterial);
+            rightDoor.position.set(1.45, 0.8, 0);
+            player.add(rightDoor);
+
+            const fenderGeo = new THREE.BoxGeometry(0.1, 0.7, 1.6);
+            const leftFrontFender = new THREE.Mesh(fenderGeo, bodyMaterial);
+            leftFrontFender.position.set(-1.45, 0.75, -2.2);
+            player.add(leftFrontFender);
+
+            const rightFrontFender = leftFrontFender.clone();
+            rightFrontFender.position.x = 1.45;
+            player.add(rightFrontFender);
+
+            const leftRearFender = new THREE.Mesh(fenderGeo, bodyMaterial);
+            leftRearFender.position.set(-1.45, 0.75, 2.2);
+            player.add(leftRearFender);
             
-            const diffuser = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.3, 0.2), secondaryMaterial);
-            diffuser.position.set(0, 0.2, 3.0); player.add(diffuser);
+            const rightRearFender = leftRearFender.clone();
+            rightRearFender.position.x = 1.45;
+            player.add(rightRearFender);
+
+            const rockerPanelGeo = new THREE.BoxGeometry(0.1, 0.2, 5.0);
+            const leftRocker = new THREE.Mesh(rockerPanelGeo, blackMaterial);
+            leftRocker.position.set(-1.4, 0.3, 0);
+            player.add(leftRocker);
             
-            const wheelGeom = new THREE.CylinderGeometry(0.5, 0.5, 0.5, 16);
-            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
-            const createWheel = () => { const w = new THREE.Mesh(wheelGeom, wheelMaterial); w.rotation.z = Math.PI / 2; return w; };
-            const wFL = createWheel(); wFL.position.set(-1.6, 0.5, -2.0);
-            const wFR = createWheel(); wFR.position.set(1.6, 0.5, -2.0);
-            const wBL = createWheel(); wBL.position.set(-1.6, 0.5, 2.0);
-            const wBR = createWheel(); wBR.position.set(1.6, 0.5, 2.0);
+            const rightRocker = leftRocker.clone();
+            rightRocker.position.x = 1.4;
+            player.add(rightRocker);
+
+            // 5. SPOYLER (YENİ DOKULU)
+            const spoiler = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.6), spoilerMaterial);
+            spoiler.position.set(0, 1.0, 3.2);
+            player.add(spoiler);
+
+            // 6. TEKERLEKLER (JANT DOKULU)
+            const createWheel = (isLeft) => {
+                const wheelGroup = new THREE.Group();
+                const wheelTire = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16), wheelTireMaterial);
+                wheelGroup.add(wheelTire);
+
+                const wheelDecalGeo = new THREE.PlaneGeometry(0.8, 0.8);
+                const wheelDecal = new THREE.Mesh(wheelDecalGeo, wheelDecalMaterial);
+                wheelDecal.position.z = isLeft ? 0.21 : -0.21;
+                wheelDecal.rotation.y = isLeft ? 0 : Math.PI;
+                wheelGroup.add(wheelDecal);
+
+                wheelGroup.rotation.z = Math.PI / 2;
+                return wheelGroup;
+            };
+
+            const wFL = createWheel(true); wFL.position.set(-1.5, 0.5, -2.0);
+            const wFR = createWheel(false); wFR.position.set(1.5, 0.5, -2.0);
+            const wBL = createWheel(true); wBL.position.set(-1.5, 0.5, 2.0);
+            const wBR = createWheel(false); wBR.position.set(1.5, 0.5, 2.0);
             player.add(wFL, wFR, wBL, wBR);
             
-            player.position.set(ROAD_WIDTH / 2 - 2, 0, 5); 
-            player.rotation.y = -Math.PI / 16; 
-
-            player.userData.lights = {};
+            // --- OYUNCU BAŞLANGIÇ POZİSYONU ---
+            player.position.set(ROAD_WIDTH / 2 - 2, 0, 5);
+            player.rotation.y = -Math.PI / 16;
             player.userData.isJumping = false;
             player.userData.verticalVelocity = 0;
             scene.add(player);
         }
-
 
         function createPoliceCar() {
             if (policeCar) return;
@@ -563,8 +632,8 @@
             sirenLightBlue = new THREE.Mesh(sirenLightGeo, new THREE.MeshStandardMaterial({ color: 0x0000ff, emissive: 0x0000ff, emissiveIntensity: 0 }));
             sirenLightBlue.position.set(0.3, 1.7, -0.3); policeCar.add(sirenLightBlue);
             
-            const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16); 
-            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true }); 
+            const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
             const createWheel = () => { 
                 const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial); 
                 wheel.rotation.z = Math.PI / 2; return wheel; 
@@ -600,7 +669,7 @@
             ctx.fillRect(12, 70, 18, 58);
             ctx.fillRect(34, 70, 18, 58);
 
-            ctx.fillStyle = '#222'; 
+            ctx.fillStyle = '#222';
             ctx.fillRect(22, 0, 20, 8);
 
             ctx.fillStyle = new THREE.Color(config.shirtColor).getStyle();
@@ -623,10 +692,10 @@
             const material = new THREE.MeshBasicMaterial({
                 map: texture,
                 transparent: true,
-                side: THREE.DoubleSide 
+                side: THREE.DoubleSide
             });
 
-            const geometry = new THREE.PlaneGeometry(1.2, 2.4); 
+            const geometry = new THREE.PlaneGeometry(1.2, 2.4);
             const pedestrian = new THREE.Mesh(geometry, material);
 
             pedestrian.position.y = 1.2;
@@ -636,7 +705,7 @@
 
         function createFlyingDebris() {
             const debrisMaterial = new THREE.MeshBasicMaterial({
-                color: 0xcccccc, 
+                color: 0xcccccc,
                 side: THREE.DoubleSide,
                 transparent: true,
                 opacity: 0.8
@@ -659,14 +728,14 @@
 
         function createAmbulance() {
             const ambulance = new THREE.Group();
-            const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, flatShading: true }); 
-            const stripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, flatShading: true }); 
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, flatShading: true });
+            const stripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, flatShading: true });
             const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, transparent: true, opacity: 0.8, flatShading: true });
             const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
             const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
 
             const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 6.5), bodyMaterial);
-            mainBody.position.y = 1.6 / 2 + 0.1; 
+            mainBody.position.y = 1.6 / 2 + 0.1;
             ambulance.add(mainBody);
 
             const cab = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.4, 2.0), bodyMaterial);
@@ -674,7 +743,7 @@
             ambulance.add(cab);
 
             const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 0.1), windowMaterial);
-            windshield.position.set(0, 1.6 + 1.4 - 0.2, -3.2); 
+            windshield.position.set(0, 1.6 + 1.4 - 0.2, -3.2);
             ambulance.add(windshield);
 
             const sideStripeGeo = new THREE.BoxGeometry(0.1, 0.4, 5.0);
@@ -691,7 +760,7 @@
             const roofLightMaterialRed = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 });
 
             const roofLight1 = new THREE.Mesh(roofLightGeo, roofLightMaterialBlue);
-            roofLight1.position.set(-0.4, 1.6 + 1.6 - 0.1, 0); 
+            roofLight1.position.set(-0.4, 1.6 + 1.6 - 0.1, 0);
             ambulance.add(roofLight1);
 
             const roofLight2 = new THREE.Mesh(roofLightGeo, roofLightMaterialRed);
@@ -742,7 +811,7 @@
             }
             if (!hasPlayerMoved && speed > 0.1) {
                 hasPlayerMoved = true;
-                areHazardLightsOn = false; 
+                areHazardLightsOn = false;
                 policeSpawnTimer = 10;
             }
             const turnSpeed = speed > 0.5 ? 0.25 : 0;
@@ -761,8 +830,8 @@
         function startGame() { 
             wantedLevel = 1; updateStarsUI(); lastPoliceShotTime = 0; lastPoliceHitTime = 0; canBeCaught = true; 
             if(sounds.siren && !sounds.siren.playing()) sounds.siren.play();
-            setTimeout(() => { showSpeechBubble('police', 'Dur! Sağa çek!'); }, 1500); 
-            setTimeout(() => { showSpeechBubble('player', 'Haha, çok beklersin!'); }, 3000); 
+            setTimeout(() => { showSpeechBubble('police', 'Dur! Sağa çek!'); }, 1500);
+            setTimeout(() => { showSpeechBubble('player', 'Haha, çok beklersin!'); }, 3000);
             nextSpeechBubbleTime = clock.getElapsedTime() + SPEECH_BUBBLE_INTERVAL;
         }
 
@@ -796,13 +865,13 @@
             const bG = new THREE.BoxGeometry(bW, bH, bDe);
 
             // BİNA DOKUSU UYGULAMASI
-            const buildingTexture = textureLoader.load('bina_apt.png'); // TAVSİYE: Boyutunu 512x512 gibi 2'nin katı yapın.
+            const buildingTexture = textureLoader.load('bina_apt.png');
             buildingTexture.wrapS = buildingTexture.wrapT = THREE.RepeatWrapping;
-            buildingTexture.repeat.set(bW / 10, bH / 10); // Binanın boyutuna göre doku tekrarı
+            buildingTexture.repeat.set(bW / 10, bH / 10);
 
             const buildingMaterial = new THREE.MeshPhongMaterial({ 
                 map: buildingTexture,
-                color: VICE_CITY_COLORS[Math.floor(Math.random() * VICE_CITY_COLORS.length)], // Dokuyu renklendirir
+                color: VICE_CITY_COLORS[Math.floor(Math.random() * VICE_CITY_COLORS.length)],
                 flatShading: true 
             });
 
@@ -839,7 +908,7 @@
         function moveWorld(){
             [...buildings, ...palmTrees, ...guardRails, ...trafficCars, ...streetLights, ...statues, ...pedestrians, ...flyingDebris].forEach(o=>{
                 o.position.z += speed;
-                if(o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200; 
+                if(o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200;
                 else if(o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
             });
             road.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
@@ -868,12 +937,12 @@
         function takeDamage(amount, reason = "WASTED"){
             if (isGameOver) return;
             playerHealth -= amount; 
-            updateHealth(); 
+            updateHealth();
             if(playerHealth <= 0){ endGame(reason); }
         }
 
         function updateHealth() {
-            playerHealth = Math.max(0, Math.min(100, playerHealth)); 
+            playerHealth = Math.max(0, Math.min(100, playerHealth));
             const healthBar = document.getElementById('health-bar');
             if (healthBar) {
                 healthBar.style.width = playerHealth + '%';
@@ -913,9 +982,9 @@
                 if (playerBox.intersectsBox(rampBox)) {
                     if (speed > 2.5 && player.position.z < car.userData.rampMesh.position.z + (car.userData.rampMesh.geometry.parameters.depth / 4) ) {
                         player.userData.isJumping = true; 
-                        player.userData.verticalVelocity = 20; 
+                        player.userData.verticalVelocity = 20;
                         score += 2500;
-                        showSpeechBubble('player', 'Hadi Uçalım!'); 
+                        showSpeechBubble('player', 'Hadi Uçalım!');
                         speed = Math.max(speed, 3.0);
                         return; 
                     }
@@ -1032,10 +1101,10 @@
                 case 'chopper': vehicle = createChopper(); break;
                 case 'limousine': vehicle = createLimousine(); break;
                 case 'ramp_truck': vehicle = createRampTruck(); break;
-                case 'ambulance': vehicle = createAmbulance(); break; 
+                case 'ambulance': vehicle = createAmbulance(); break;
             }
             const lanes = [-ROAD_WIDTH / 3, 0, ROAD_WIDTH / 3]; vehicle.position.x = lanes[Math.floor(Math.random() * lanes.length)];
-            vehicle.position.z = player.position.z - 300 - Math.random() * 400; 
+            vehicle.position.z = player.position.z - 300 - Math.random() * 400;
             const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
             const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
 
@@ -1116,8 +1185,8 @@
 
         function createRampTruck() {
             const truck = new THREE.Group();
-            const cabMaterial = new THREE.MeshPhongMaterial({ color: 0x00A0B0, flatShading: true }); 
-            const flatbedMaterial = new THREE.MeshPhongMaterial({ color: 0xFFC300, flatShading: true }); 
+            const cabMaterial = new THREE.MeshPhongMaterial({ color: 0x00A0B0, flatShading: true });
+            const flatbedMaterial = new THREE.MeshPhongMaterial({ color: 0xFFC300, flatShading: true });
             const rampMaterial = new THREE.MeshPhongMaterial({ color: 0xFF5733, flatShading: true });
 
             const cab = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.2, 2.5), cabMaterial);
@@ -1486,7 +1555,6 @@
         function createRoadAndSidewalks() { 
             road = new THREE.Group();
             
-            // YOL DOKUSU UYGULAMASI
             const roadTexture = textureLoader.load('yol_boş.png');
             roadTexture.wrapS = roadTexture.wrapT = THREE.RepeatWrapping;
             roadTexture.repeat.set(4, 20);
@@ -1507,7 +1575,8 @@
         function createScenery(){ 
             sidewalkLeft = new THREE.Group(); sidewalkRight = new THREE.Group(); beach = new THREE.Group(); 
             ocean = new THREE.Group(); buildingGround = new THREE.Group();
-            const sidewalkMaterial = new THREE.MeshPhongMaterial({color:0xd2b48c}); const beachMaterial = new THREE.MeshPhongMaterial({color:0xf2d16b});
+            const sidewalkMaterial = new THREE.MeshPhongMaterial({color:0xd2b48c});
+            const beachMaterial = new THREE.MeshPhongMaterial({color:0xf2d16b});
             const oceanMaterial = new THREE.MeshPhongMaterial({color:0x0066cc, transparent:true, opacity:0.8});
             for(let i = 0; i < SEGMENT_COUNT; i++){
                 const zPosition = i * SEGMENT_LENGTH - TOTAL_LENGTH / 2;
@@ -1665,7 +1734,7 @@
         function initializeGame() { 
             try {
                 clock = new THREE.Clock();
-                textureLoader = new THREE.TextureLoader(); // TextureLoader burada oluşturuluyor
+                textureLoader = new THREE.TextureLoader();
                 scene = new THREE.Scene();
                 
                 camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
