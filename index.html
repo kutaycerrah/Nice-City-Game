@@ -1708,14 +1708,10 @@
 
         function initializeGame() {
             try {
-                // <<< DEĞİŞİKLİK 1: LoadingManager oluşturuluyor >>>
-                // Bu yönetici, tüm yüklemelerin bittiğinden emin olacak.
                 const loadingManager = new THREE.LoadingManager();
                 
-                // Yükleme tamamlandığında ne olacağını belirliyoruz.
                 loadingManager.onLoad = () => {
                     console.log("Tüm dokular başarıyla yüklendi!");
-                    // Oyunun ana mantığı artık burada, her şeyin yüklendiğinden emin olduktan sonra çalışacak.
                     document.getElementById('game').classList.add('visible');
                     
                     setTimeout(() => {
@@ -1727,7 +1723,6 @@
                     if (sounds?.engine) sounds.engine.play();
                 };
 
-                // Hata durumunda ne olacağını belirliyoruz.
                 loadingManager.onError = (url) => {
                     console.error('Şu dosyayı yüklerken bir hata oluştu: ' + url);
                     displayError({
@@ -1736,6 +1731,63 @@
                         stack: "Lütfen GitHub deponuzdaki dosya adlarının ve yollarının doğru olduğundan emin olun."
                     });
                 };
+
+                const textureLoader = new THREE.TextureLoader(loadingManager);
+                textureLoader.setCrossOrigin('anonymous');
+
+                const basePath = 'https://ycerrah.github.io/Nice-City-Game/';
+
+                buildingTexture = textureLoader.load(basePath + 'bina_apt.png');
+                roadTexture = textureLoader.load(basePath + 'yol_boş.png');
+                
+                // <<< DEĞİŞİKLİK: Türkçe karakter 'ı' kaldırıldı >>>
+                sidewalkTexture = textureLoader.load(basePath + 'kaldrim.png');
+                
+                beachTexture = textureLoader.load(basePath + 'plaj.png');
+                palmTrunkTexture = textureLoader.load(basePath + 'palm_texture.png');
+                palmLeafTexture = textureLoader.load(basePath + 'palm_tree.png');
+                wheelTexture = textureLoader.load(basePath + 'whell.png');
+
+                clock = new THREE.Clock(); scene = new THREE.Scene();
+                
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
+                isIntroPlaying = true;
+                cinematicCameraTarget = new THREE.Vector3();
+
+                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
+                renderer.sortObjects = false;
+
+                renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
+                scene.background = dayCycleParameters.NIGHT.background.clone();
+                scene.fog = new THREE.Fog(dayCycleParameters.NIGHT.fog.clone(), dayCycleParameters.NIGHT.fogNear, dayCycleParameters.NIGHT.fogFar);
+                hemiLight = new THREE.HemisphereLight(dayCycleParameters.NIGHT.hemiSky, dayCycleParameters.NIGHT.hemiGround, dayCycleParameters.NIGHT.dirIntensity);
+                scene.add(hemiLight);
+                dirLight = new THREE.DirectionalLight(dayCycleParameters.NIGHT.dirLight, dayCycleParameters.NIGHT.dirIntensity);
+                dirLight.position.set(-50, 40, 20); dirLight.castShadow = true;
+                
+                dirLight.shadow.mapSize.width = 1024; 
+                dirLight.shadow.mapSize.height = 1024;
+                dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
+                dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100; dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
+                scene.add(dirLight); 
+                
+                createWorld(); 
+                updateHealth();
+
+                camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
+                camera.lookAt(player.position);
+
+                setupControls(); 
+                areHazardLightsOn = true;
+                
+                animate(); 
+                
+                window.addEventListener('resize', onWindowResize, false);
+                
+            } catch(e) {
+                displayError(e);
+            }
+        }
 
                 // TextureLoader'ı oluştururken LoadingManager'ı ona bağlıyoruz.
                 const textureLoader = new THREE.TextureLoader(loadingManager);
