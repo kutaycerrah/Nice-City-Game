@@ -663,40 +663,30 @@
         }
 
         function moveWorld() {
-            let palmIndex = 0;
+            // Instanced Palmiyeleri Güncelle
             let leafIndex = 0;
-
-            palmTrees.forEach((palmData) => {
-                const trunkMatrix = palmTrunkInstances.getMatrixAt(palmIndex, new THREE.Matrix4());
-                const position = new THREE.Vector3();
-                position.setFromMatrixPosition(trunkMatrix);
-
-                position.z += speed;
-
-                if (position.z > player.position.z + 200) {
-                    position.z -= TOTAL_LENGTH + Math.random() * 200;
-                } else if (position.z < player.position.z - TOTAL_LENGTH - 100) {
-                    position.z += TOTAL_LENGTH + Math.random() * 200;
+            palmTrees.forEach((palmData, i) => {
+                palmData.position.z += speed;
+                if (palmData.position.z > player.position.z + 200) {
+                    palmData.position.z -= TOTAL_LENGTH + Math.random() * 200;
                 }
                 
-                dummy.position.copy(position);
+                dummy.position.copy(palmData.position);
                 dummy.updateMatrix();
-                palmTrunkInstances.setMatrixAt(palmIndex, dummy.matrix);
+                palmTrunkInstances.setMatrixAt(i, dummy.matrix);
 
                 for (let j = 0; j < LEAF_PER_PALM; j++) {
-                    const leafDummy = new THREE.Object3D();
-                    leafDummy.position.set(position.x, 14, position.z); // gövdenin tepesi
-                    leafDummy.rotation.y = (j / LEAF_PER_PALM) * Math.PI * 2 + Math.random() * 0.5;
-                    leafDummy.rotation.x = Math.PI / 4 + Math.random() * 0.2;
+                    const leafDummy = palmData.leaves[j];
+                    leafDummy.position.copy(palmData.position);
+                    leafDummy.position.y = 14; 
                     leafDummy.updateMatrix();
                     palmLeafInstances.setMatrixAt(leafIndex++, leafDummy.matrix);
                 }
-                palmIndex++;
             });
-
             palmTrunkInstances.instanceMatrix.needsUpdate = true;
             palmLeafInstances.instanceMatrix.needsUpdate = true;
 
+            // Diğer objeleri güncelle
             const otherObjects = [...buildings, ...trafficCars, ...streetLights, ...statues, ...pedestrians, ...flyingDebris];
             otherObjects.forEach(o => {
                 o.position.z += speed;
@@ -704,6 +694,7 @@
                 else if (o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
             });
 
+            // Zeminleri güncelle
             const groundObjects = [road, sidewalkLeft, sidewalkRight, beach, ocean, buildingGround];
             groundObjects.forEach(group => {
                 if (group) group.children.forEach(c => { 
@@ -784,7 +775,6 @@
             } 
             scene.add(sidewalkLeft, beach, ocean, sidewalkRight, buildingGround);
             
-            // Binaları sadece sağa yerleştir
             for (let i = 0; i < 40; i++) { 
                 const xPos = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + (Math.random() * (BUILDING_GROUND_WIDTH - 20));
                 createBuilding(xPos, Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2);
@@ -835,28 +825,136 @@
                 const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
                 
                 const trunkY = 7;
-                const palmData = { position: new THREE.Vector3(xPos, trunkY, zPos) };
-                palmTrees.push(palmData);
-
+                const palmData = { position: new THREE.Vector3(xPos, trunkY, zPos), leaves: [] };
+                
                 dummy.position.copy(palmData.position);
                 dummy.updateMatrix();
                 palmTrunkInstances.setMatrixAt(i, dummy.matrix);
 
                 for (let j = 0; j < LEAF_PER_PALM; j++) {
                     const leafDummy = new THREE.Object3D();
-                    leafDummy.position.set(xPos, trunkY * 2, zPos); 
                     leafDummy.rotation.y = (j / LEAF_PER_PALM) * Math.PI * 2 + Math.random() * 0.5;
                     leafDummy.rotation.x = Math.PI / 4 + Math.random() * 0.2;
-                    leafDummy.updateMatrix();
-                    palmLeafInstances.setMatrixAt(leafIndex++, leafDummy.matrix);
+                    palmData.leaves.push(leafDummy);
                 }
+                palmTrees.push(palmData);
             }
             palmTrunkInstances.instanceMatrix.needsUpdate = true;
-            palmLeafInstances.instanceMatrix.needsUpdate = true;
         }
 
-        // --- Diğer tüm fonksiyonlar buraya ---
+        function createStreetLights() {
+            const poleMaterial = new THREE.MeshToonMaterial({ color: 0x444444 });
+            const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            const spacing = 150;
+            for (let i = 0; i < TOTAL_LENGTH / spacing; i++) {
+                [-1, 1].forEach(side => {
+                    const lightGroup = new THREE.Group();
+                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 8, 8), poleMaterial);
+                    pole.position.y = 4;
+                    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.4), bulbMaterial.clone());
+                    const light = new THREE.PointLight(0xffd700, 2, 40, 2);
+                    bulb.position.y = 8.2;
+                    light.position.y = 8;
+                    lightGroup.add(pole, bulb, light);
+                    lightGroup.position.set((ROAD_WIDTH / 2 + 2) * side, 0, i * spacing - TOTAL_LENGTH / 2);
+                    lightGroup.castShadow = true;
+                    lightGroup.userData = { isStreetlight: true, isHit: false, isFalling: false };
+                    streetLights.push(lightGroup);
+                    scene.add(lightGroup);
+                });
+            }
+        }
         
+        // --- Buradan sonrası tam ve eksiksizdir ---
+
+        function updatePlayerMovement() {
+            if (isIntroPlaying) return;
+            
+            const topSpeed = 7.5; 
+            const acceleration = 0.15;
+            if (isBoosting) {
+                const boostTargetSpeed = topSpeed * BOOST_SPEED_MULTIPLIER;
+                speed = Math.min(boostTargetSpeed, speed + 0.25);
+            } else {
+                if(isAccelerating) { speed = Math.min(topSpeed, speed + acceleration); } 
+                else if(isBraking) { speed = Math.max(0, speed - 0.1); } 
+                else { speed *= 0.985; } 
+            }
+            if (!hasPlayerMoved && speed > 0.1) {
+                hasPlayerMoved = true;
+                areHazardLightsOn = false;
+                policeSpawnTimer = 10;
+            }
+            const turnSpeed = speed > 0.5 ? 0.35 : 0;
+            const limitLeft = -ROAD_WIDTH / 2 - SIDEWALK_WIDTH - BEACH_WIDTH + 15;
+            const limitRight = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + BUILDING_GROUND_WIDTH - 15;
+            if(isTurningLeft) player.position.x = Math.max(limitLeft, player.position.x - turnSpeed);
+            if(isTurningRight) player.position.x = Math.min(limitRight, player.position.x + turnSpeed);
+            
+            let targetTilt = 0;
+            if (isTurningLeft) targetTilt = 0.1;
+            else if (isTurningRight) targetTilt = -0.1;
+            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, targetTilt, 0.08);
+            player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, 0, 0.05);
+        }
+
+        function takeDamage(amount, reason = "WASTED"){
+            if (isGameOver) return;
+            playerHealth -= amount; 
+            updateHealth();
+            if(playerHealth <= 0){ endGame(reason); }
+        }
+
+        function updateHealth() {
+            playerHealth = Math.max(0, Math.min(100, playerHealth));
+            const healthBar = document.getElementById('health-bar');
+            if (healthBar) {
+                healthBar.style.width = playerHealth + '%';
+                if (playerHealth > 50) {
+                    healthBar.style.backgroundColor = '#4CAF50';
+                } else if (playerHealth > 20) {
+                    healthBar.style.backgroundColor = '#FFC107';
+                } else {
+                    healthBar.style.backgroundColor = '#f44336';
+                }
+            }
+        }
+        
+        function shakeCamera(intensity = 0.3){
+            let shakeAmount = intensity;
+            const shakeInterval = setInterval(() => {
+                camera.position.x += (Math.random() - 0.5) * shakeAmount;
+                camera.position.y += (Math.random() - 0.5) * shakeAmount;
+                shakeAmount *= 0.8;
+                if(shakeAmount < 0.05) { clearInterval(shakeInterval); }
+            }, 20);
+        }
+
+        function endGame(reason){
+            isGameOver = true;
+            if (sounds && sounds.siren) sounds.siren.stop(); if (sounds && sounds.engine) sounds.engine.stop(); if (sounds && sounds.radio) sounds.radio.stop();
+            const gameOverText = document.getElementById('game-over-text');
+            const finalReason = reason === "YAKALANDIN" ? "YAKALANDIN" : "WASTED";
+            gameOverText.innerText = finalReason; gameOverText.style.color = (finalReason === "WASTED") ? "#d9534f" : "#5bc0de";
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+        
+        function updateStarsUI(){ for(let i = 1; i <= 5; i++) document.getElementById(`star-${i}`).innerHTML = (i <= wantedLevel) ? STAR_FILLED_SVG : STAR_EMPTY_SVG; }
+        
+        function updateBoostUI() {
+            const accelBtn = document.getElementById('accel-btn');
+            if (isBoostAvailable) { accelBtn.innerHTML = 'IVME'; accelBtn.style.fontSize = '18px'; } 
+            else { accelBtn.innerHTML = '&uarr;'; accelBtn.style.fontSize = '38px'; }
+        }
+        
+        function showSpeechBubble(character, message) {
+            const bubbleId = character === 'player' ? 'player-speech-bubble' : 'police-speech-bubble';
+            const bubble = document.getElementById(bubbleId); if (!bubble || bubble.classList.contains('visible')) return;
+            bubble.innerText = message || (character === 'player' ? playerPhrases[Math.floor(Math.random() * playerPhrases.length)] : policePhrases[Math.floor(Math.random() * policePhrases.length)]);
+            bubble.style.display = 'block'; setTimeout(() => bubble.classList.add('visible'), 10);
+            setTimeout(() => { bubble.classList.remove('visible'); setTimeout(() => bubble.style.display = 'none', 300); }, 2500);
+        }
+
         function initializeGame() { 
             try {
                 const textureLoader = new THREE.TextureLoader();
@@ -954,12 +1052,7 @@
                 sounds.radio.volume(THREE.MathUtils.lerp(sounds.radio.volume(), targetRadioVol, 0.05));
                 sounds.engine.volume(THREE.MathUtils.lerp(sounds.engine.volume(), targetEngineVol, 0.05));
             }
-            if (policeDisableTimer > 0) policeDisableTimer -= deltaTime;
-            if (hasPlayerMoved) gameTime += deltaTime;
-            if (policeSpawnTimer > 0) { policeSpawnTimer -= deltaTime; if (policeSpawnTimer <= 0) { createPoliceCar(); startGame(); } }
-            if (hasPlayerMoved && !isBoosting) { if (cleanDrivingTime < BOOST_CHARGE_TIME) cleanDrivingTime += deltaTime; else if (!isBoostAvailable) { isBoostAvailable = true; updateBoostUI(); } }
-            if (isBoosting) { boostTimeRemaining -= deltaTime; if (boostTimeRemaining <= 0) isBoosting = false; }
-            
+
             updatePlayerMovement();
             moveWorld();
             updateCamera();
