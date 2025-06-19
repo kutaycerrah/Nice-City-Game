@@ -1731,15 +1731,13 @@
                     displayError({
                         name: "Texture Load Error",
                         message: `Aşağıdaki dosya yüklenemedi. URL'yi veya dosya adını kontrol edin: ${url}`,
-                        stack: "Lütfen GitHub deponuzdaki dosya adlarının ve yollarının doğru olduğundan emin olun."
+                        stack: "Lütfen GitHub deponuzdaki dosya adlarının ve yollarının doğru olduğundan emin olun. Büyük/küçük harf ve Türkçe karakterlere dikkat edin."
                     });
                 };
 
                 const textureLoader = new THREE.TextureLoader(loadingManager);
                 textureLoader.setCrossOrigin('anonymous');
 
-                // <<< DEĞİŞİKLİK: Hatalı olan '/Nice-City-Game/' kısmı yoldan kaldırıldı. >>>
-                // DOĞRU YOL BUDUR:
                 const basePath = 'https://ycerrah.github.io/';
 
                 buildingTexture = textureLoader.load(basePath + 'bina_apt.png');
@@ -1790,70 +1788,7 @@
                 displayError(e);
             }
         }
-
-                loadingManager.onError = (url) => {
-                    console.error('Şu dosyayı yüklerken bir hata oluştu: ' + url);
-                    displayError({
-                        name: "Texture Load Error",
-                        message: `Aşağıdaki dosya yüklenemedi. URL'yi veya dosya adını kontrol edin: ${url}`,
-                        stack: "Lütfen GitHub deponuzdaki dosya adlarının ve yollarının doğru olduğundan emin olun."
-                    });
-                };
-
-                const textureLoader = new THREE.TextureLoader(loadingManager);
-                textureLoader.setCrossOrigin('anonymous');
-
-                const basePath = 'https://ycerrah.github.io/Nice-City-Game/';
-
-                buildingTexture = textureLoader.load(basePath + 'bina_apt.png');
-                roadTexture = textureLoader.load(basePath + 'yol_bos.png');
-                sidewalkTexture = textureLoader.load(basePath + 'kaldrim.png');
-                beachTexture = textureLoader.load(basePath + 'plaj.png');
-                palmTrunkTexture = textureLoader.load(basePath + 'palm_texture.png');
-                palmLeafTexture = textureLoader.load(basePath + 'palm_tree.png');
-                wheelTexture = textureLoader.load(basePath + 'whell.png');
-
-                clock = new THREE.Clock(); scene = new THREE.Scene();
-                
-                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
-                isIntroPlaying = true;
-                cinematicCameraTarget = new THREE.Vector3();
-
-                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
-                renderer.sortObjects = false;
-
-                renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
-                scene.background = dayCycleParameters.NIGHT.background.clone();
-                scene.fog = new THREE.Fog(dayCycleParameters.NIGHT.fog.clone(), dayCycleParameters.NIGHT.fogNear, dayCycleParameters.NIGHT.fogFar);
-                hemiLight = new THREE.HemisphereLight(dayCycleParameters.NIGHT.hemiSky, dayCycleParameters.NIGHT.hemiGround, dayCycleParameters.NIGHT.dirIntensity);
-                scene.add(hemiLight);
-                dirLight = new THREE.DirectionalLight(dayCycleParameters.NIGHT.dirLight, dayCycleParameters.NIGHT.dirIntensity);
-                dirLight.position.set(-50, 40, 20); dirLight.castShadow = true;
-                
-                dirLight.shadow.mapSize.width = 1024; 
-                dirLight.shadow.mapSize.height = 1024;
-                dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
-                dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100; dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
-                scene.add(dirLight); 
-                
-                createWorld(); 
-                updateHealth();
-
-                camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
-                camera.lookAt(player.position);
-
-                setupControls(); 
-                areHazardLightsOn = true;
-                
-                animate(); 
-                
-                window.addEventListener('resize', onWindowResize, false);
-                
-            } catch(e) {
-                displayError(e);
-            }
-        }
-
+        
         function animate() { 
             requestAnimationFrame(animate); 
             if (isGameOver) return;
