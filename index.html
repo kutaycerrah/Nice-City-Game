@@ -286,7 +286,7 @@
 
         // --- SABİTLER ---
         const SPEECH_BUBBLE_INTERVAL = 15;
-        const ROAD_WIDTH = 20, SIDEWALK_WIDTH = 5, SEGMENT_LENGTH = 1000, SEGMENT_COUNT = 3, TOTAL_LENGTH = 3 * SEGMENT_LENGTH;
+        const ROAD_WIDTH = 20, SIDEWALK_WIDTH = 5, BEACH_WIDTH = 100, SEGMENT_LENGTH = 1000, SEGMENT_COUNT = 3, TOTAL_LENGTH = 3 * SEGMENT_LENGTH;
         const POLICE_BOOST_DISABLE_DURATION = 20;
         const POLICE_RAM_COOLDOWN = 10;
         const STAR_EMPTY_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>`;
@@ -309,9 +309,9 @@
             NIGHT:     { background: new THREE.Color(0x1a2a4a), fog: new THREE.Color(0x3a4a6a), hemiSky: new THREE.Color(0xcceeff), hemiGround: new THREE.Color(0x556688), dirLight: new THREE.Color(0xffffff), dirIntensity: 0.6, fogNear: 500, fogFar: 2500 },
             MORNING:   { background: new THREE.Color(0xf7b267), fog: new THREE.Color(0xe5989b), hemiSky: new THREE.Color(0xf7b267), hemiGround: new THREE.Color(0xc06c84), dirLight: new THREE.Color(0xffaa00), dirIntensity: 0.8, fogNear: 450, fogFar: 2000 },
             PRE_NOON:  { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xa0dae9), hemiSky: new THREE.Color(0xadd8e6), hemiGround: new THREE.Color(0xa9a9a9), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.0, fogNear: 400, fogFar: 1600 },
-            NOON:      { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xa0dae9), hemiSky: new THREE.Color(0xffffff), hemiGround: new THREE.Color(0xcccccc), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.5, fogNear: 350, fogFar: 1500 }, // Yoğunluk artırıldı
-            AFTERNOON: { background: new THREE.Color(0xa0d8e9), fog: new THREE.Color(0xb0c7db), hemiSky: new THREE.Color(0xf5f5dc), hemiGround: new THREE.Color(0xb0c7db), dirLight: new THREE.Color(0xffdd88), dirIntensity: 1.1, fogNear: 400, fogFar: 1800 }, // Yoğunluk artırıldı
-            EVENING:   { background: new THREE.Color(0xff4e50), fog: new THREE.Color(0xff8c42), hemiSky: new THREE.Color(0xff6f61), hemiGround: new THREE.Color(0x6b5b95), dirLight: new THREE.Color(0xff6600), dirIntensity: 0.9, fogNear: 480, fogFar: 2200 } // Yoğunluk artırıldı
+            NOON:      { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xa0dae9), hemiSky: new THREE.Color(0xffffff), hemiGround: new THREE.Color(0xcccccc), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.5, fogNear: 350, fogFar: 1500 },
+            AFTERNOON: { background: new THREE.Color(0xa0d8e9), fog: new THREE.Color(0xb0c7db), hemiSky: new THREE.Color(0xf5f5dc), hemiGround: new THREE.Color(0xb0c7db), dirLight: new THREE.Color(0xffdd88), dirIntensity: 1.1, fogNear: 400, fogFar: 1800 },
+            EVENING:   { background: new THREE.Color(0xff4e50), fog: new THREE.Color(0xff8c42), hemiSky: new THREE.Color(0xff6f61), hemiGround: new THREE.Color(0x6b5b95), dirLight: new THREE.Color(0xff6600), dirIntensity: 0.9, fogNear: 480, fogFar: 2200 }
         };
         const dayCyclePhases = ['NIGHT', 'MORNING', 'PRE_NOON', 'NOON', 'AFTERNOON', 'EVENING'];
         const dayCycleTime = 120; const phaseDuration = dayCycleTime / dayCyclePhases.length; let currentCycleTime = 0;
@@ -324,13 +324,13 @@
         let scene, camera, renderer, clock;
         let player, policeCar = null, sirenLightRed, sirenLightBlue, road;
         let sounds;
-        let buildings = [], palmTrees = [], guardRails = [], trafficCars = [], streetLights = [], statues = [], debrisParticles = [], rain, bulletSparks = [];
+        let buildings = [], palmTrees = [], guardRails = [], trafficCars = [], statues = [], debrisParticles = [], rain, bulletSparks = [];
         let hemiLight, dirLight;
         let speed = 0, score = 0, wantedLevel = 0, playerHealth = 100;
         let isGameOver = false, canBeCaught = false, isRaining = false, isRadioPlaying = false;
         let isAccelerating = false, isBraking = false, isTurningLeft = false, isTurningRight = false;
         let lastPoliceShotTime = 0, wantedLevelCooldown = 0, lastPoliceHitTime = 0, isCrashSoundPlaying = false;
-        let beach, ocean, sidewalkLeft, sidewalkRight, buildingGround;
+        let beachLeft, oceanLeft, beachRight, oceanRight, sidewalkLeft, sidewalkRight;
         let pedestrians = [];
         const PEDESTRIAN_SKIN_COLORS = ['#f2d5b1', '#c68642', '#8d5524', '#f5cba7', '#a16e4b'];
         const PEDESTRIAN_SHIRT_COLORS = [0x69d2e7, 0xa7dbd8, 0xf38630, 0xfa6900, 0xff4e50, 0xf9d423, 0xf8b195, 0xc06c84, 0xffffff, 0x333333];
@@ -355,7 +355,6 @@
 
         async function callGemini(prompt) {
             const isMissionPrompt = prompt.includes("görev hedefi oluştur");
-            // *** BİLGİ: Gemini özelliği için buraya kendi API anahtarınızı eklemeniz gerekir. ***
             const apiKey = ""; // <--- BURAYA KENDİ GOOGLE AI API ANAHTARINIZI GİRİN
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
@@ -459,7 +458,6 @@
         }
         
         function createStyledWheel() {
-            // OPTİMİZASYON: Tekerlek poligon sayısı düşürüldü
             const wheelGeom = new THREE.CylinderGeometry(0.5, 0.5, 0.5, 12);
             const tireMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
             const rimMaterial = new THREE.MeshBasicMaterial({ color: 0x999999 });
@@ -718,13 +716,14 @@
 
         function updatePlayerMovement() {
             if (isIntroPlaying) return;
-
-            const topSpeed = 5.5;
+            
+            // GAMEPLAY İYİLEŞTİRME: Araç hızı ve ivmelenmesi artırıldı
+            const topSpeed = 7.0; 
             if (isBoosting) {
                 const boostTargetSpeed = topSpeed * BOOST_SPEED_MULTIPLIER;
                 speed = Math.min(boostTargetSpeed, speed + 0.25);
             } else {
-                if(isAccelerating) { speed = Math.min(topSpeed, speed + 0.08); } 
+                if(isAccelerating) { speed = Math.min(topSpeed, speed + 0.12); } 
                 else if(isBraking) { speed = Math.max(0, speed - 0.1); } 
                 else { speed *= 0.99; }
             }
@@ -733,9 +732,9 @@
                 areHazardLightsOn = false;
                 policeSpawnTimer = 10;
             }
-            const turnSpeed = speed > 0.5 ? 0.25 : 0;
-            const limitLeft = -ROAD_WIDTH / 2 - SIDEWALK_WIDTH + 1.7;
-            const limitRight = ROAD_WIDTH / 2 + SIDEWALK_WIDTH - 1.7;
+            const turnSpeed = speed > 0.5 ? 0.30 : 0;
+            const limitLeft = -ROAD_WIDTH / 2 - SIDEWALK_WIDTH - BEACH_WIDTH + 5;
+            const limitRight = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + BEACH_WIDTH - 5;
             if(isTurningLeft) player.position.x = Math.max(limitLeft, player.position.x - turnSpeed);
             if(isTurningRight) player.position.x = Math.min(limitRight, player.position.x + turnSpeed);
             
@@ -804,7 +803,22 @@
         }
 
         function moveWorld(){
-            [...buildings, ...palmTrees, ...guardRails, ...trafficCars, ...streetLights, ...statues, ...pedestrians, ...flyingDebris].forEach(o=>{
+            const dummy = new THREE.Object3D();
+            
+            palmTrees.forEach((instance, index) => {
+                instance.position.z += speed;
+                if (instance.position.z > player.position.z + 200) {
+                    instance.position.z -= TOTAL_LENGTH + Math.random() * 200;
+                } else if (instance.position.z < player.position.z - TOTAL_LENGTH - 100) {
+                    instance.position.z += TOTAL_LENGTH + Math.random() * 200;
+                }
+                dummy.position.copy(instance.position);
+                dummy.updateMatrix();
+                palmTreeInstances.setMatrixAt(index, dummy.matrix);
+            });
+            palmTreeInstances.instanceMatrix.needsUpdate = true;
+
+            [...buildings, ...guardRails, ...trafficCars, ...statues, ...pedestrians, ...flyingDebris].forEach(o=>{
                 o.position.z += speed;
                 if(o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200;
                 else if(o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
@@ -812,9 +826,10 @@
             road.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
             sidewalkLeft.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
             sidewalkRight.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
-            buildingGround.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
-            beach.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
-            ocean.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
+            beachLeft.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
+            beachRight.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
+            oceanLeft.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
+            oceanRight.children.forEach(c => { c.position.z += speed; if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; });
         }
 
         function updatePoliceShooting(dT){
@@ -940,22 +955,6 @@
                     scene.remove(statue);
                     statues.splice(i, 1);
                     takeDamage(5); speed *= 0.8; score += 1000; shakeCamera(0.5);
-                    if(sounds && sounds.crash) sounds.crash.play();
-                    cleanDrivingTime = 0; isBoostAvailable = false; updateBoostUI();
-                }
-            }
-            for (let i = streetLights.length - 1; i >= 0; i--) {
-                const light = streetLights[i];
-                if (light.userData.isHit) continue;
-                const lightBox = new THREE.Box3().setFromObject(light.children[0]);
-                lightBox.expandByVector(new THREE.Vector3(0,4,0));
-                lightBox.applyMatrix4(light.matrixWorld);
-                if (playerBox.intersectsBox(lightBox)) {
-                    light.userData.isHit = true;
-                    light.userData.isFalling = true;
-                    light.userData.fallRotation = 0;
-                    light.userData.fallAxis = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
-                    takeDamage(10); speed *= 0.7; score += 250; shakeCamera(0.6);
                     if(sounds && sounds.crash) sounds.crash.play();
                     cleanDrivingTime = 0; isBoostAvailable = false; updateBoostUI();
                 }
@@ -1200,7 +1199,8 @@
 
         function updateCamera(){ 
             if (!player || isIntroPlaying) return;
-            const speedFactor = Math.min(speed / 5.5, 1.0); const cameraTarget = new THREE.Vector3();
+            const speedFactor = Math.min(speed / 7.0, 1.0); // Hız artışına göre ayarlandı
+            const cameraTarget = new THREE.Vector3();
             cameraTarget.x = player.position.x * 0.6; 
             cameraTarget.y = player.position.y + 12 - (speedFactor * 2); 
             cameraTarget.z = player.position.z + 25 - (speedFactor * 5);
@@ -1356,8 +1356,7 @@
         }
         
         function updateFallingObjects(deltaTime) {
-            for (let i = streetLights.length - 1; i >= 0; i--) {
-                const light = streetLights[i];
+            streetLights.forEach(light => {
                 if (light.userData.isFalling && light.userData.fallRotation < Math.PI / 2) {
                     light.userData.fallRotation += deltaTime * 2;
                     light.rotation.x = light.userData.fallRotation;
@@ -1379,7 +1378,7 @@
                          }
                     }
                 }
-            }
+            });
         }
 
         function updateDayCycle(deltaTime) {
@@ -1400,6 +1399,7 @@
             let normalizedDayBrightness = (dirLight.intensity - 0.6) / (1.2 - 0.6);
             normalizedDayBrightness = Math.max(0, Math.min(1, normalizedDayBrightness));
             const streetLightGlowFactor = 1.0 - normalizedDayBrightness;
+            
             streetLights.forEach(lightGroup => {
                 if(lightGroup.userData.isHit) return;
                 const isNightTime = dayCyclePhases[currentPhaseIndex] === 'NIGHT' || dayCyclePhases[currentPhaseIndex] === 'EVENING';
@@ -1445,22 +1445,37 @@
 
         function createRoadAndSidewalks() { 
             road = new THREE.Group();
-            const roadMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0x444444,
-                shininess: 20 
-            });
+            const roadMaterial = new THREE.MeshPhongMaterial({ color: 0x444444, shininess: 20 });
             
             for (let i = 0; i < SEGMENT_COUNT; i++) {
                 const segment = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH, SEGMENT_LENGTH), roadMaterial);
-                segment.rotation.x = -Math.PI / 2; segment.position.z = i * SEGMENT_LENGTH - TOTAL_LENGTH / 2;
-                segment.receiveShadow = true; road.add(segment);
+                segment.rotation.x = -Math.PI / 2; 
+                segment.position.z = i * SEGMENT_LENGTH - TOTAL_LENGTH / 2;
+                segment.receiveShadow = true; 
+                road.add(segment);
             }
             scene.add(road);
+
+            // YOL ÇİZGİLERİ EKLEME
+            const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const lineLength = 4;
+            const lineGap = 6;
+            const lineGeo = new THREE.PlaneGeometry(0.3, lineLength);
+            
+            [-ROAD_WIDTH / 6, ROAD_WIDTH / 6].forEach(lineX => {
+                 for(let z = -TOTAL_LENGTH / 2; z < TOTAL_LENGTH / 2; z += lineLength + lineGap) {
+                    const line = new THREE.Mesh(lineGeo, lineMaterial);
+                    line.rotation.x = -Math.PI / 2;
+                    line.position.set(lineX, 0.02, z);
+                    road.add(line);
+                }
+            });
         }
 
         function createScenery(){ 
-            sidewalkLeft = new THREE.Group(); sidewalkRight = new THREE.Group(); beach = new THREE.Group(); 
-            ocean = new THREE.Group(); buildingGround = new THREE.Group();
+            sidewalkLeft = new THREE.Group(); sidewalkRight = new THREE.Group(); 
+            beachLeft = new THREE.Group(); oceanLeft = new THREE.Group();
+            beachRight = new THREE.Group(); oceanRight = new THREE.Group();
             
             const sidewalkMaterial = new THREE.MeshPhongMaterial({ color: 0xAAAAAA });
             const beachMaterial = new THREE.MeshPhongMaterial({ color: 0xD2B48C });
@@ -1468,24 +1483,34 @@
             
             for(let i = 0; i < SEGMENT_COUNT; i++){
                 const zPosition = i * SEGMENT_LENGTH - TOTAL_LENGTH / 2;
+                
+                // Sol Taraf
                 const sidewalkL = new THREE.Mesh(new THREE.PlaneGeometry(SIDEWALK_WIDTH, SEGMENT_LENGTH), sidewalkMaterial);
                 sidewalkL.rotation.x = -Math.PI / 2; sidewalkL.position.set(-ROAD_WIDTH/2 - SIDEWALK_WIDTH/2, 0.1, zPosition); sidewalkL.receiveShadow = true; sidewalkLeft.add(sidewalkL);
+                const beachSegmentL = new THREE.Mesh(new THREE.PlaneGeometry(BEACH_WIDTH, SEGMENT_LENGTH), beachMaterial);
+                beachSegmentL.rotation.x = -Math.PI / 2; beachSegmentL.position.set(-ROAD_WIDTH/2 - SIDEWALK_WIDTH - BEACH_WIDTH/2, 0, zPosition); beachLeft.add(beachSegmentL);
+                const oceanSegmentL = new THREE.Mesh(new THREE.PlaneGeometry(200, SEGMENT_LENGTH, 20, 10), oceanMaterial);
+                oceanSegmentL.rotation.x = -Math.PI / 2; oceanSegmentL.position.set(-ROAD_WIDTH/2 - SIDEWALK_WIDTH - BEACH_WIDTH - 100, -0.1, zPosition); oceanLeft.add(oceanSegmentL);
+
+                // Sağ Taraf (Simetrik)
                 const sidewalkR = new THREE.Mesh(new THREE.PlaneGeometry(SIDEWALK_WIDTH, SEGMENT_LENGTH), sidewalkMaterial);
                 sidewalkR.rotation.x = -Math.PI / 2; sidewalkR.position.set(ROAD_WIDTH/2 + SIDEWALK_WIDTH/2, 0.1, zPosition); sidewalkR.receiveShadow = true; sidewalkRight.add(sidewalkR);
-                const groundR = new THREE.Mesh(new THREE.PlaneGeometry(200, SEGMENT_LENGTH), sidewalkMaterial);
-                groundR.rotation.x = -Math.PI / 2; groundR.position.set(ROAD_WIDTH/2 + SIDEWALK_WIDTH + 100, 0.1, zPosition); groundR.receiveShadow = true; buildingGround.add(groundR);
-                
-                const beachSegment = new THREE.Mesh(new THREE.PlaneGeometry(100, SEGMENT_LENGTH), beachMaterial);
-                beachSegment.rotation.x = -Math.PI / 2; beachSegment.position.set(-ROAD_WIDTH/2 - SIDEWALK_WIDTH - 50, 0, zPosition); beach.add(beachSegment);
-                
-                const oceanSegment = new THREE.Mesh(new THREE.PlaneGeometry(200, SEGMENT_LENGTH, 20, 10), oceanMaterial);
-                oceanSegment.rotation.x = -Math.PI / 2; oceanSegment.position.set(-ROAD_WIDTH/2 - SIDEWALK_WIDTH - 150, -0.1, zPosition); ocean.add(oceanSegment);
+                const beachSegmentR = new THREE.Mesh(new THREE.PlaneGeometry(BEACH_WIDTH, SEGMENT_LENGTH), beachMaterial);
+                beachSegmentR.rotation.x = -Math.PI / 2; beachSegmentR.position.set(ROAD_WIDTH/2 + SIDEWALK_WIDTH + BEACH_WIDTH/2, 0, zPosition); beachRight.add(beachSegmentR);
+                const oceanSegmentR = new THREE.Mesh(new THREE.PlaneGeometry(200, SEGMENT_LENGTH, 20, 10), oceanMaterial);
+                oceanSegmentR.rotation.x = -Math.PI / 2; oceanSegmentR.position.set(ROAD_WIDTH/2 + SIDEWALK_WIDTH + BEACH_WIDTH + 100, -0.1, zPosition); oceanRight.add(oceanSegmentR);
             } 
-            scene.add(sidewalkLeft, sidewalkRight, beach, ocean, buildingGround);
-            for (let i = 0; i < 40; i++) createBuilding(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 10 + Math.random() * 50, Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2);
-            for(let i = 0; i < 100; i++) createPalmTree(-ROAD_WIDTH / 2 - SIDEWALK_WIDTH - Math.random() * 95, Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2);
+            scene.add(sidewalkLeft, sidewalkRight, beachLeft, oceanLeft, beachRight, oceanRight);
+            
+            for (let i = 0; i < 20; i++) { // Binaları azaltarak performansa katkı
+                const side = Math.random() < 0.5 ? -1 : 1;
+                const xPos = side * (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + BEACH_WIDTH/2 + Math.random() * 20);
+                createBuilding(xPos, Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2);
+            }
+            
             for (let i = 0; i < 20; i++) {
-                const statue = createStatue(); const side = Math.random() < 0.5 ? 1 : -1;
+                const statue = createStatue(); 
+                const side = Math.random() < 0.5 ? 1 : -1;
                 const xPos = side * (ROAD_WIDTH / 2 + SIDEWALK_WIDTH * 0.5 + Math.random() - 0.5);
                 const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
                 statue.position.set(xPos, 0.25, zPos); statues.push(statue); scene.add(statue);
@@ -1494,15 +1519,9 @@
             for (let i = 0; i < 80; i++) {
                 const pedestrian = createPedestrian();
                 const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
-
-                if (Math.random() < 0.5) {
-                    const xPos = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + Math.random() * 50;
-                    pedestrian.position.set(xPos, 1.2, zPos);
-                } else {
-                    const xPos = -ROAD_WIDTH / 2 - SIDEWALK_WIDTH - Math.random() * 95;
-                    pedestrian.position.set(xPos, 1.2, zPos);
-                }
-
+                const side = Math.random() < 0.5 ? 1 : -1;
+                const xPos = side * (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + Math.random() * (BEACH_WIDTH - 5));
+                pedestrian.position.set(xPos, 1.2, zPos);
                 pedestrians.push(pedestrian);
                 scene.add(pedestrian);
             }
@@ -1516,33 +1535,34 @@
                 scene.add(debris);
             }
         }
-
-        function createPalmTree(x, z) {
-            const palm = new THREE.Group();
-            const trunkHeight = 12 + Math.random() * 4;
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, trunkHeight, 8), new THREE.MeshPhongMaterial({ map: palmTrunkTexture, flatShading: true }));
-            trunk.position.y = trunkHeight / 2; 
-            // OPTİMİZASYON: Palmiyeler gölge oluşturmuyor
-            trunk.castShadow = false; 
-            palm.add(trunk);
+        
+        let palmTreeInstances;
+        function initializePalmTrees() {
+            const PALM_COUNT = 100;
+            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 14, 8);
+            const leafGeo = new THREE.PlaneGeometry(5, 5);
+            // GÖRSEL İYİLEŞTİRME: Palmiye materyallerine renk eklendi
+            const trunkMat = new THREE.MeshPhongMaterial({ map: palmTrunkTexture, color: 0x654321, flatShading: true });
+            const leafMat = new THREE.MeshPhongMaterial({ map: palmLeafTexture, color: 0x008000, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
             
-            const leafMaterial = new THREE.MeshPhongMaterial({ 
-                map: palmLeafTexture, 
-                transparent: true, 
-                alphaTest: 0.5,
-                side: THREE.DoubleSide
-            });
-
-            for (let i = 0; i < 10; i++) {
-                const leaf = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), leafMaterial);
-                // OPTİMİZASYON: Palmiye yaprakları gölge oluşturmuyor
-                leaf.castShadow = false; 
-                leaf.position.y = trunkHeight;
-                leaf.rotation.y = (i / 10) * Math.PI * 2 + Math.random() * 0.5;
-                leaf.rotation.x = Math.PI / 4 + Math.random() * 0.2;
-                palm.add(leaf);
+            palmTreeInstances = new THREE.InstancedMesh(trunkGeo, trunkMat, PALM_COUNT);
+            palmTreeInstances.castShadow = false; // Ana optimizasyon
+            palmTreeInstances.receiveShadow = true;
+            scene.add(palmTreeInstances);
+            
+            const dummy = new THREE.Object3D();
+            for(let i=0; i < PALM_COUNT; i++) {
+                const side = Math.random() < 0.5 ? -1 : 1;
+                const xPos = side * (ROAD_WIDTH/2 + SIDEWALK_WIDTH + Math.random() * (BEACH_WIDTH - 5) );
+                const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
+                const palmData = { position: new THREE.Vector3(xPos, 7, zPos) }; // y pozisyonu gövde boyunun yarısı
+                palmTrees.push(palmData);
+                
+                dummy.position.copy(palmData.position);
+                dummy.updateMatrix();
+                palmTreeInstances.setMatrixAt(i, dummy.matrix);
             }
-            palm.position.set(x, 0, z); palmTrees.push(palm); scene.add(palm);
+            palmTreeInstances.instanceMatrix.needsUpdate = true;
         }
 
         function createStreetLights() {
@@ -1618,18 +1638,18 @@
         }
 
         function updateOcean(time) {
-            ocean.children.forEach(segment => {
+            const updateSegment = (segment) => {
                 const positions = segment.geometry.attributes.position.array;
                 const originalPositions = segment.geometry.attributes.position.clone().array;
-
                 for (let i = 0; i < positions.length; i += 3) {
-                    const px = originalPositions[i];
-                    const pz = originalPositions[i + 2];
+                    const px = originalPositions[i]; const pz = originalPositions[i + 2];
                     positions[i+1] = Math.sin(px * 0.05 + time * 0.5) * 0.3 + Math.sin(pz * 0.05 + time * 0.3) * 0.3;
                 }
                 segment.geometry.attributes.position.needsUpdate = true;
                 segment.geometry.computeVertexNormals();
-            });
+            };
+            oceanLeft.children.forEach(updateSegment);
+            oceanRight.children.forEach(updateSegment);
         }
 
         function initializeGame() { 
@@ -1648,19 +1668,15 @@
                 renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
                 renderer.setSize(window.innerWidth, window.innerHeight); 
                 renderer.shadowMap.enabled = true;
-
-                // GÖRSEL İYİLEŞTİRME: Renklerin daha canlı ve doğru görünmesi için ayarlar eklendi
+                
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 
                 scene.background = dayCycleParameters.NIGHT.background.clone();
                 scene.fog = new THREE.Fog(dayCycleParameters.NIGHT.fog.clone(), dayCycleParameters.NIGHT.fogNear, dayCycleParameters.NIGHT.fogFar);
                 
-                // GÖRSEL İYİLEŞTİRME: Işık yoğunluğu artırıldı
                 hemiLight = new THREE.HemisphereLight(dayCycleParameters.NIGHT.hemiSky, dayCycleParameters.NIGHT.hemiGround, 0.8);
                 scene.add(hemiLight);
-
-                // GÖRSEL İYİLEŞTİRME: Sahneye genel bir aydınlık katmak için AmbientLight eklendi
                 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
                 scene.add(ambientLight);
 
@@ -1668,7 +1684,6 @@
                 dirLight.position.set(-50, 40, 20); 
                 dirLight.castShadow = true;
 
-                // OPTİMİZASYON: Gölge kalitesi düşürüldü
                 dirLight.shadow.mapSize.width = 1024; 
                 dirLight.shadow.mapSize.height = 1024;
                 dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
@@ -1676,6 +1691,7 @@
                 scene.add(dirLight); 
                 
                 createWorld(); 
+                initializePalmTrees(); // Palmiyeleri InstancedMesh olarak başlat
                 updateHealth();
 
                 camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
@@ -1709,8 +1725,8 @@
             if (isIntroPlaying) {
                 cinematicCameraTarget.set(
                     player.position.x * 0.6,
-                    player.position.y + 12 - (speed / 5.5 * 2),
-                    player.position.z + 25 - (speed / 5.5 * 5)
+                    player.position.y + 12 - (speed / 7.0 * 2),
+                    player.position.z + 25 - (speed / 7.0 * 5)
                 );
 
                 camera.position.lerp(cinematicCameraTarget, deltaTime * 0.6);
@@ -1730,7 +1746,7 @@
                 return;
             }
 
-            const topSpeed = 5.5;
+            const topSpeed = 7.0;
             if (isRadioPlaying && sounds.radio && sounds.engine) {
                 const normalizedSpeed = Math.min(speed / topSpeed, 1.0);
                 const targetRadioVol = RADIO_VOL_MAX - (normalizedSpeed * (RADIO_VOL_MAX - RADIO_VOL_MIN));
