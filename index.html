@@ -397,49 +397,38 @@
                 heal_sound: new Howl({ src: ['https://actions.google.com/sounds/v1/fantasy/spell_heal.ogg'], volume: 0.7 })
             };
         }
-
-        function loadAssets() {
-            const loadingBar = document.getElementById('loading-bar');
-            const loadingPercentage = document.getElementById('loading-percentage');
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 2;
-                if(progress > 100) progress = 100;
-                loadingBar.style.width = progress + '%';
-                loadingPercentage.innerText = Math.round(progress) + '%';
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        document.getElementById('loading-screen').style.opacity = '0';
-                        const nameEntryScreen = document.getElementById('name-entry-screen');
-                        nameEntryScreen.style.display = 'flex';
-                        setTimeout(() => nameEntryScreen.classList.add('visible'), 50);
-                        nameEntryScreen.addEventListener('transitionend', () => {
-                            document.getElementById('loading-screen').style.display = 'none';
-                        }, { once: true });
-                    }, 500);
-                }
-            }, 50);
-        }
-
+        
         function setupGameStart() {
             const startGameButton = document.getElementById('start-game-button');
             const nameEntryScreen = document.getElementById('name-entry-screen');
-            const playerNameInput = document.getElementById('player-name-input');
-            playerNameInput.addEventListener('focus', () => {
-                if (!isRadioPlaying && sounds?.radio) {
-                    sounds.radio.play(); isRadioPlaying = true;
-                }
-            }, { once: true });
-            startGameButton.addEventListener('click', () => {
+            const gameCanvas = document.getElementById('game');
+            
+            const startTheGame = () => {
                 if (isRadioPlaying && sounds?.radio) {
                     sounds.radio.fade(MENU_VOLUME, RADIO_VOL_MAX, 1000);
                 }
                 nameEntryScreen.classList.remove('visible');
-                setTimeout(() => {
-                    nameEntryScreen.style.display = 'none';
-                    initializeGame();
-                }, 1000);
+                
+                nameEntryScreen.addEventListener('transitionend', () => {
+                     nameEntryScreen.style.display = 'none';
+                     gameCanvas.style.display = 'block';
+                     setTimeout(() => {
+                        isIntroPlaying = false; // Kick off the main game logic
+                        document.getElementById('ui-container').classList.add('visible');
+                        if (window.innerWidth <= 768) {
+                            document.getElementById('mobile-controls').classList.add('visible');
+                        }
+                     }, 500);
+                }, { once: true });
+            };
+
+            startGameButton.addEventListener('click', startTheGame);
+
+            // Allow starting by pressing Enter key in the input field
+            document.getElementById('player-name-input').addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    startTheGame();
+                }
             });
         }
         
@@ -1211,7 +1200,7 @@
         }
 
         function updateCamera(){ 
-            if (!player || isIntroPlaying) return;
+            if (isIntroPlaying) return;
             const speedFactor = Math.min(speed / 6.5, 1.0); const cameraTarget = new THREE.Vector3();
             cameraTarget.x = player.position.x * 0.6; 
             cameraTarget.y = player.position.y + 12 - (speedFactor * 2); 
@@ -1708,19 +1697,33 @@
 
         function initializeGame() {
             try {
+                const loadingBar = document.getElementById('loading-bar');
+                const loadingPercentage = document.getElementById('loading-percentage');
+
                 const loadingManager = new THREE.LoadingManager();
                 
+                loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+                    const progress = (itemsLoaded / itemsTotal);
+                    loadingBar.style.width = progress * 100 + '%';
+                    loadingPercentage.innerText = Math.round(progress * 100) + '%';
+                };
+
                 loadingManager.onLoad = () => {
                     console.log("Tüm dokular başarıyla yüklendi!");
-                    document.getElementById('game').classList.add('visible');
-                    
                     setTimeout(() => {
-                        showSpeechBubble('player', 'Hmm, güzel araba... Artık benim.');
-                    }, 1500);
+                        document.getElementById('loading-screen').style.opacity = '0';
+                        const nameEntryScreen = document.getElementById('name-entry-screen');
+                        
+                        nameEntryScreen.addEventListener('transitionend', () => {
+                            document.getElementById('loading-screen').style.display = 'none';
+                        }, { once: true });
 
-                    document.getElementById('mission-container').style.display = 'none';
+                        nameEntryScreen.style.display = 'flex';
+                        setTimeout(() => nameEntryScreen.classList.add('visible'), 50);
 
-                    if (sounds?.engine) sounds.engine.play();
+                        setupGameStart();
+
+                    }, 500);
                 };
 
                 loadingManager.onError = (url) => {
@@ -1737,130 +1740,14 @@
 
                 const basePath = 'https://ycerrah.github.io/Nice-City-Game/';
 
-                // <<< DEĞİŞİKLİK: TÜM TÜRKÇE KARAKTERLER DÜZELTİLDİ >>>
                 buildingTexture = textureLoader.load(basePath + 'bina_apt.png');
-                roadTexture = textureLoader.load(basePath + 'yol_bos.png');      // 'yol_boş.png' -> 'yol_bos.png'
-                sidewalkTexture = textureLoader.load(basePath + 'kaldrim.png');   // 'kaldırım.png' -> 'kaldrim.png'
-                beachTexture = textureLoader.load(basePath + 'plaj.png');
-                palmTrunkTexture = textureLoader.load(basePath + 'palm_texture.png');
-                palmLeafTexture = textureLoader.load(basePath + 'palm_tree.png');
-                wheelTexture = textureLoader.load(basePath + 'whell.png');
-
-                clock = new THREE.Clock(); scene = new THREE.Scene();
-                
-                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
-                isIntroPlaying = true;
-                cinematicCameraTarget = new THREE.Vector3();
-
-                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
-                renderer.sortObjects = false;
-
-                renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
-                scene.background = dayCycleParameters.NIGHT.background.clone();
-                scene.fog = new THREE.Fog(dayCycleParameters.NIGHT.fog.clone(), dayCycleParameters.NIGHT.fogNear, dayCycleParameters.NIGHT.fogFar);
-                hemiLight = new THREE.HemisphereLight(dayCycleParameters.NIGHT.hemiSky, dayCycleParameters.NIGHT.hemiGround, dayCycleParameters.NIGHT.dirIntensity);
-                scene.add(hemiLight);
-                dirLight = new THREE.DirectionalLight(dayCycleParameters.NIGHT.dirLight, dayCycleParameters.NIGHT.dirIntensity);
-                dirLight.position.set(-50, 40, 20); dirLight.castShadow = true;
-                
-                dirLight.shadow.mapSize.width = 1024; 
-                dirLight.shadow.mapSize.height = 1024;
-                dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
-                dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100; dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
-                scene.add(dirLight); 
-                
-                createWorld(); 
-                updateHealth();
-
-                camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
-                camera.lookAt(player.position);
-
-                setupControls(); 
-                areHazardLightsOn = true;
-                
-                animate(); 
-                
-                window.addEventListener('resize', onWindowResize, false);
-                
-            } catch(e) {
-                displayError(e);
-            }
-        }
-
-                const textureLoader = new THREE.TextureLoader(loadingManager);
-                textureLoader.setCrossOrigin('anonymous');
-
-                const basePath = 'https://ycerrah.github.io/Nice-City-Game/';
-
-                buildingTexture = textureLoader.load(basePath + 'bina_apt.png');
-                roadTexture = textureLoader.load(basePath + 'yol_boş.png');
-                
-                // <<< DEĞİŞİKLİK: Türkçe karakter 'ı' kaldırıldı >>>
+                roadTexture = textureLoader.load(basePath + 'yol_bos.png');
                 sidewalkTexture = textureLoader.load(basePath + 'kaldrim.png');
-                
                 beachTexture = textureLoader.load(basePath + 'plaj.png');
                 palmTrunkTexture = textureLoader.load(basePath + 'palm_texture.png');
                 palmLeafTexture = textureLoader.load(basePath + 'palm_tree.png');
                 wheelTexture = textureLoader.load(basePath + 'whell.png');
 
-                clock = new THREE.Clock(); scene = new THREE.Scene();
-                
-                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
-                isIntroPlaying = true;
-                cinematicCameraTarget = new THREE.Vector3();
-
-                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
-                renderer.sortObjects = false;
-
-                renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
-                scene.background = dayCycleParameters.NIGHT.background.clone();
-                scene.fog = new THREE.Fog(dayCycleParameters.NIGHT.fog.clone(), dayCycleParameters.NIGHT.fogNear, dayCycleParameters.NIGHT.fogFar);
-                hemiLight = new THREE.HemisphereLight(dayCycleParameters.NIGHT.hemiSky, dayCycleParameters.NIGHT.hemiGround, dayCycleParameters.NIGHT.dirIntensity);
-                scene.add(hemiLight);
-                dirLight = new THREE.DirectionalLight(dayCycleParameters.NIGHT.dirLight, dayCycleParameters.NIGHT.dirIntensity);
-                dirLight.position.set(-50, 40, 20); dirLight.castShadow = true;
-                
-                dirLight.shadow.mapSize.width = 1024; 
-                dirLight.shadow.mapSize.height = 1024;
-                dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
-                dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100; dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
-                scene.add(dirLight); 
-                
-                createWorld(); 
-                updateHealth();
-
-                camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
-                camera.lookAt(player.position);
-
-                setupControls(); 
-                areHazardLightsOn = true;
-                
-                animate(); 
-                
-                window.addEventListener('resize', onWindowResize, false);
-                
-            } catch(e) {
-                displayError(e);
-            }
-        }
-
-                // TextureLoader'ı oluştururken LoadingManager'ı ona bağlıyoruz.
-                const textureLoader = new THREE.TextureLoader(loadingManager);
-                textureLoader.setCrossOrigin('anonymous');
-
-                // <<< DEĞİŞİKLİK 2: URL'ye repo adınız eklendi >>>
-                // Doğru dosya yolu artık bu şekilde olmalı.
-                const basePath = 'https://ycerrah.github.io/Nice-City-Game/';
-
-                buildingTexture = textureLoader.load(basePath + 'bina_apt.png');
-                roadTexture = textureLoader.load(basePath + 'yol_boş.png');
-                sidewalkTexture = textureLoader.load(basePath + 'kaldırım.png');
-                beachTexture = textureLoader.load(basePath + 'plaj.png');
-                palmTrunkTexture = textureLoader.load(basePath + 'palm_texture.png');
-                palmLeafTexture = textureLoader.load(basePath + 'palm_tree.png');
-                wheelTexture = textureLoader.load(basePath + 'whell.png');
-
-                // Oyunun temel kurulumu burada yapılıyor ama başlatma işlemi yukarıdaki onLoad içinde.
                 clock = new THREE.Clock(); scene = new THREE.Scene();
                 
                 camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
@@ -1908,25 +1795,7 @@
             const deltaTime = clock.getDelta();
 
             if (isIntroPlaying) {
-                cinematicCameraTarget.set(
-                    player.position.x * 0.6,
-                    player.position.y + 12 - (speed / 6.5 * 2),
-                    player.position.z + 25 - (speed / 6.5 * 5)
-                );
-
-                camera.position.lerp(cinematicCameraTarget, deltaTime * 0.6);
-
-                const lookAtTarget = new THREE.Vector3(player.position.x, player.position.y + 2.0, player.position.z);
-                camera.lookAt(lookAtTarget);
-
-                if (camera.position.distanceTo(cinematicCameraTarget) < 1.0) {
-                    isIntroPlaying = false;
-                    
-                    document.getElementById('ui-container').classList.add('visible');
-                    if (window.innerWidth <= 768) {
-                        document.getElementById('mobile-controls').classList.add('visible');
-                    }
-                }
+                // Intro cinematic logic can go here if needed, or just render
                 renderer.render(scene, camera);
                 return;
             }
@@ -2031,8 +1900,7 @@
         
         window.addEventListener('DOMContentLoaded', () => { 
             loadSounds();
-            loadAssets(); 
-            setupGameStart(); 
+            initializeGame(); 
         });
 
     </script>
