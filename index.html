@@ -389,12 +389,15 @@
         }
 
         function loadSounds() {
+            // <<< DEĞİŞİKLİK: Tüm ses dosyaları artık sizin GitHub deponuzdan yükleniyor >>>
+            const soundBasePath = 'https://raw.githubusercontent.com/kutaycerrah/Nice-City-Game/main/sounds/';
+
             sounds = {
-                engine: new Howl({ src: ['https://github.com/atakancerrahoglu/Nice-city/raw/refs/heads/main/engine_sound.ogg'], loop: true, volume: ENGINE_VOL_MIN, html5: true }),
-                crash: new Howl({ src: ['https://actions.google.com/sounds/v1/impacts/crash.ogg'], volume: 0.5 }),
-                siren: new Howl({ src: ['https://github.com/atakancerrahoglu/Nice-city/raw/refs/heads/main/police_sound.ogg'], loop: true, volume: SIREN_VOLUME }),
-                radio: new Howl({ src: ['https://github.com/atakancerrahoglu/Nice-city/raw/refs/heads/main/Vice%20City%20Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true }),
-                heal_sound: new Howl({ src: ['https://actions.google.com/sounds/v1/fantasy/spell_heal.ogg'], volume: 0.7 })
+                engine: new Howl({ src: [soundBasePath + 'engine_sound.ogg'], loop: true, volume: ENGINE_VOL_MIN, html5: true }),
+                crash: new Howl({ src: [soundBasePath + 'crash.ogg'], volume: 0.5 }),
+                siren: new Howl({ src: [soundBasePath + 'police_sound.ogg'], loop: true, volume: SIREN_VOLUME }),
+                radio: new Howl({ src: [soundBasePath + 'Vice City Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true }),
+                heal_sound: new Howl({ src: [soundBasePath + 'spell_heal.ogg'], volume: 0.7 })
             };
         }
         
