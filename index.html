@@ -305,15 +305,17 @@
         const NEON_COLORS = [0xff00ff, 0x00ffff, 0x54fcfd, 0xf72119, 0x00ff7f, 0xff89f3];
         const WINDOW_LIGHT_COLORS = [0xffffee, 0xffd8b1, 0xcce4ff];
         const TRAFFIC_CAR_COLORS = [0xAAAAAA, 0xDDDDDD, 0x333333, 0x800000, 0x003300, 0xC0C0C0, 0xFF0000, 0x00FF00, 0x0000FF, 0xFFA500, 0x800080, 0x008080, 0xFF4500, 0xDA70D6, 0x4B0082, 0xADFF2F, 0x00FFFF];
+        
         const dayCycleParameters = {
-            NIGHT:     { background: new THREE.Color(0x1a2a4a), fog: new THREE.Color(0x3a4a6a), hemiSky: new THREE.Color(0xcceeff), hemiGround: new THREE.Color(0x556688), dirLight: new THREE.Color(0xffffff), dirIntensity: 0.6, fogNear: 500, fogFar: 2500 },
-            MORNING:   { background: new THREE.Color(0xf7b267), fog: new THREE.Color(0xe5989b), hemiSky: new THREE.Color(0xf7b267), hemiGround: new THREE.Color(0xc06c84), dirLight: new THREE.Color(0xffaa00), dirIntensity: 0.8, fogNear: 450, fogFar: 2000 },
-            PRE_NOON:  { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xa0dae9), hemiSky: new THREE.Color(0xadd8e6), hemiGround: new THREE.Color(0xa9a9a9), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.0, fogNear: 400, fogFar: 1600 },
-            NOON:      { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xa0dae9), hemiSky: new THREE.Color(0xffffff), hemiGround: new THREE.Color(0xcccccc), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.2, fogNear: 350, fogFar: 1500 },
-            AFTERNOON: { background: new THREE.Color(0xa0d8e9), fog: new THREE.Color(0xb0c7db), hemiSky: new THREE.Color(0xf5f5dc), hemiGround: new THREE.Color(0xb0c7db), dirLight: new THREE.Color(0xffdd88), dirIntensity: 0.9, fogNear: 400, fogFar: 1800 },
-            EVENING:   { background: new THREE.Color(0xff4e50), fog: new THREE.Color(0xff8c42), hemiSky: new THREE.Color(0xff6f61), hemiGround: new THREE.Color(0x6b5b95), dirLight: new THREE.Color(0xff6600), dirIntensity: 0.7, fogNear: 480, fogFar: 2200 }
+            NIGHT:     { background: new THREE.Color(0x1a2a4a), fog: new THREE.Color(0x3a4a6a), hemiSky: new THREE.Color(0x405080), hemiGround: new THREE.Color(0x202040), dirLight: new THREE.Color(0x8888ff), dirIntensity: 0.6, fogNear: 500, fogFar: 2500 },
+            EVENING:   { background: new THREE.Color(0xff4e50), fog: new THREE.Color(0xff8c42), hemiSky: new THREE.Color(0xff6f61), hemiGround: new THREE.Color(0x6b5b95), dirLight: new THREE.Color(0xff6600), dirIntensity: 0.7, fogNear: 480, fogFar: 2200 },
+            AFTERNOON: { background: new THREE.Color(0x24C6DC), fog: new THREE.Color(0x514A9D), hemiSky: new THREE.Color(0xf5f5dc), hemiGround: new THREE.Color(0xb0c7db), dirLight: new THREE.Color(0xffdd88), dirIntensity: 0.9, fogNear: 400, fogFar: 1800 },
+            NOON:      { background: new THREE.Color(0x00c9ff), fog: new THREE.Color(0xffa2e3), hemiSky: new THREE.Color(0x00c9ff), hemiGround: new THREE.Color(0xfadadd), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.2, fogNear: 350, fogFar: 1500 },
+            PRE_NOON:  { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xfbc2eb), hemiSky: new THREE.Color(0xa0d8e9), hemiGround: new THREE.Color(0xf9e79f), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.0, fogNear: 400, fogFar: 1600 },
+            MORNING:   { background: new THREE.Color(0xf7b267), fog: new THREE.Color(0xe5989b), hemiSky: new THREE.Color(0xf7b267), hemiGround: new THREE.Color(0xc06c84), dirLight: new THREE.Color(0xffaa00), dirIntensity: 0.8, fogNear: 450, fogFar: 2000 }
         };
-        const dayCyclePhases = ['NIGHT', 'MORNING', 'PRE_NOON', 'NOON', 'AFTERNOON', 'EVENING'];
+
+        const dayCyclePhases = ['NIGHT', 'EVENING', 'AFTERNOON', 'NOON', 'PRE_NOON', 'MORNING'];
         const dayCycleTime = 120; const phaseDuration = dayCycleTime / dayCyclePhases.length; let currentCycleTime = 0;
         
         // --- SES SABİTLERİ ---
@@ -462,7 +464,7 @@
         function createStyledWheel() {
             const wheelGeom = new THREE.CylinderGeometry(0.5, 0.5, 0.5, 12);
             const tireMaterial = new THREE.MeshToonMaterial({ color: 0x111111 });
-            const rimMaterial = new THREE.MeshToonMaterial({ map: wheelTexture });
+            const rimMaterial = new THREE.MeshBasicMaterial({ map: wheelTexture });
             const materials = [ tireMaterial, rimMaterial, rimMaterial ];
             const wheel = new THREE.Mesh(wheelGeom, materials);
             wheel.rotation.z = Math.PI / 2;
@@ -1489,27 +1491,21 @@
             lineTexture = createLaneLineTexture();
             const lineMaterial = new THREE.MeshBasicMaterial({ 
                 map: lineTexture, 
-                transparent: true,
-                depthWrite: false,
-                polygonOffset: true,
-                polygonOffsetFactor: -2,
-                polygonOffsetUnits: -2
+                transparent: true
             });
 
             const lineGeometry = new THREE.PlaneGeometry(0.5, TOTAL_LENGTH);
 
             const lineLeft = new THREE.Mesh(lineGeometry, lineMaterial);
             lineLeft.position.x = -ROAD_WIDTH / 6;
-            lineLeft.position.y = 0.01;
+            lineLeft.position.y = 0.1;
             lineLeft.rotation.x = -Math.PI / 2;
-            lineLeft.renderOrder = 1;
             road.add(lineLeft);
 
             const lineRight = new THREE.Mesh(lineGeometry, lineMaterial);
             lineRight.position.x = ROAD_WIDTH / 6;
-            lineRight.position.y = 0.01;
+            lineRight.position.y = 0.1;
             lineRight.rotation.x = -Math.PI / 2;
-            lineRight.renderOrder = 1;
             road.add(lineRight);
 
             scene.add(road);
@@ -1655,10 +1651,9 @@
 
         function toggleRain(state) {
             isRaining = state; rain.visible = state;
-            const wetRoadColor = new THREE.Color(0x222222); const dryRoadColor = new THREE.Color(0x808080);
             road.children.forEach(segment => {
                 if (segment.material.map === roadTexture) {
-                    segment.material.color.set(state ? wetRoadColor : new THREE.Color(0xffffff)); // Yağmursuzken doku rengini değiştirmemek için beyaza ayarlıyoruz
+                    segment.material.color.set(state ? new THREE.Color(0x555555) : new THREE.Color(0xffffff));
                     segment.material.needsUpdate = true;
                 }
             });
@@ -1716,7 +1711,7 @@
                 const textureLoader = new THREE.TextureLoader();
                 textureLoader.setCrossOrigin('anonymous');
 
-                const basePath = 'https://raw.githubusercontent.com/kutaycerrah/Nice-City-Game/main/';
+                const basePath = 'https://ycerrah.github.io/';
 
                 buildingTexture = textureLoader.load(basePath + 'bina_apt.png');
                 roadTexture = textureLoader.load(basePath + 'yol_boş.png');
