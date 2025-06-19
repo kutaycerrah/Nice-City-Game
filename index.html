@@ -109,6 +109,8 @@
             flex-direction: column; justify-content: center; align-items: center;
             font-family: 'Press Start 2P', cursive; text-align: center;
             z-index: 99; opacity: 0; transition: opacity 1s ease-in-out;
+            -webkit-user-select: auto;
+            user-select: auto;
         }
         #name-entry-screen.visible { display: flex; opacity: 1; }
         #name-entry-screen h2 { font-size: 8vw; text-shadow: 3px 3px 0px #c7006e; margin-bottom: 30px; }
@@ -340,7 +342,7 @@
         const PEDESTRIAN_SHIRT_COLORS = [0x69d2e7, 0xa7dbd8, 0xf38630, 0xfa6900, 0xff4e50, 0xf9d423, 0xf8b195, 0xc06c84, 0xffffff, 0x333333];
         const PEDESTRIAN_PANTS_COLORS = [0x004d80, 0x333333, 'beige', 0x654321, 0x444444];
         let flyingDebris = [];
-
+        
         const BOOST_CHARGE_TIME = 20, BOOST_DURATION = 3.5, BOOST_SPEED_MULTIPLIER = 1.6;
         let cleanDrivingTime = 0, isBoostAvailable = false, isBoosting = false, boostTimeRemaining = 0, lastAccelTapTime = 0, policeDisableTimer = 0;
         let hasPlayerMoved = false, policeSpawnTimer = -1, areHazardLightsOn = false, gameTime = 0;
@@ -419,7 +421,10 @@
 
                 if (sounds?.engine && !sounds.engine.playing()) sounds.engine.play();
                 
+                hasPlayerMoved = true; 
+                areHazardLightsOn = false;
                 canBeCaught = false; 
+                setTimeout(() => canBeCaught = true, 3000); 
             };
             
             startGameButton.addEventListener('click', startTheGame);
@@ -707,7 +712,6 @@
         }
 
         function updatePlayerMovement() {
-            if (isGameOver || hasPlayerMoved === false) return; // Oyuna başlayana kadar hareket etme
             const topSpeed = 6.5;
             if (isBoosting) {
                 const boostTargetSpeed = topSpeed * BOOST_SPEED_MULTIPLIER;
@@ -732,7 +736,7 @@
         }
 
         function startGame() { 
-            wantedLevel = 1; updateStarsUI(); lastPoliceShotTime = 0; lastPoliceHitTime = 0; canBeCaught = true; 
+            wantedLevel = 1; updateStarsUI(); lastPoliceShotTime = 0; lastPoliceHitTime = 0; 
             if(sounds.siren && !sounds.siren.playing()) sounds.siren.play();
             setTimeout(() => { showSpeechBubble('police', 'Dur! Sağa çek!'); }, 1500);
             setTimeout(() => { showSpeechBubble('player', 'Haha, çok beklersin!'); }, 3000);
@@ -844,46 +848,53 @@
         }
 
         function updateTraffic(dT){
+            const ACTIVE_DISTANCE = 400; 
             if(trafficCars.length < 15 && Math.random() < 0.03 && hasPlayerMoved) createTrafficCar();
+            
             for(let i = trafficCars.length - 1; i >= 0; i--){
                 const car = trafficCars[i];
-                if(car.userData.isHit){
-                    car.position.add(car.userData.velocity.clone().multiplyScalar(dT)); car.rotation.y += car.userData.spin * dT;
-                    car.userData.velocity.y -= 9.8 * dT; car.userData.life -= dT;
-                    if(car.userData.life <= 0){ scene.remove(car); trafficCars.splice(i, 1); }
-                } else { car.position.z += car.userData.speed * 0.5; }
-                if(car.position.z > player.position.z + 50 || car.position.z < player.position.z - 500){ scene.remove(car); trafficCars.splice(i, 1); }
-            }
-        }
+                const distance = player.position.distanceTo(car.position);
 
-        function checkRampJumps() {
-            if (!player || player.userData.isJumping) return;
-            const playerBox = new THREE.Box3().setFromObject(player);
-            for (let i = trafficCars.length - 1; i >= 0; i--) {
-                const car = trafficCars[i];
-                if (car.userData.type !== 'ramp_truck') continue;
-                
-                const rampBox = car.userData.rampMesh.geometry.boundingBox.clone();
-                rampBox.applyMatrix4(car.userData.rampMesh.matrixWorld);
-
-                if (playerBox.intersectsBox(rampBox)) {
-                    if (speed > 2.5 && player.position.z < car.userData.rampMesh.position.z + (car.userData.rampMesh.geometry.parameters.depth / 4) ) {
-                        player.userData.isJumping = true; 
-                        player.userData.verticalVelocity = 20;
-                        score += 2500;
-                        showSpeechBubble('player', 'Hadi Uçalım!');
-                        speed = Math.max(speed, 3.0);
-                        return; 
+                if (distance > ACTIVE_DISTANCE * 1.5) {
+                    car.position.z += car.userData.speed * 0.5;
+                    if(car.position.z > player.position.z + 50) {
+                        scene.remove(car); 
+                        trafficCars.splice(i, 1);
                     }
+                    continue; 
+                }
+
+                if(car.userData.isHit){
+                    car.position.add(car.userData.velocity.clone().multiplyScalar(dT)); 
+                    car.rotation.y += car.userData.spin * dT;
+                    car.userData.velocity.y -= 9.8 * dT; 
+                    car.userData.life -= dT;
+                    if(car.userData.life <= 0){ 
+                        scene.remove(car); 
+                        trafficCars.splice(i, 1); 
+                    }
+                } else { 
+                    car.position.z += car.userData.speed * 0.5; 
+                }
+
+                if(car.position.z > player.position.z + 50 || car.position.z < player.position.z - (ACTIVE_DISTANCE * 2)){ 
+                    scene.remove(car); 
+                    trafficCars.splice(i, 1); 
                 }
             }
         }
 
         function checkCollisions(){
             if(!canBeCaught || !player) return;
+            const ACTIVE_DISTANCE = 100;
             const playerBoundingBox = new THREE.Box3().setFromObject(player);
+
             for(let i = trafficCars.length - 1; i >= 0; i--){
                 const trafficCar = trafficCars[i];
+                const distance = player.position.distanceTo(trafficCar.position);
+                
+                if (distance > ACTIVE_DISTANCE) continue;
+
                 if(trafficCar.userData.isHit || trafficCar.userData.type === 'ambulance') continue;
                 const carBoundingBox = new THREE.Box3().setFromObject(trafficCar);
                 if(playerBoundingBox.intersectsBox(carBoundingBox)){
@@ -923,10 +934,13 @@
         
         function checkDestructibleCollisions() {
             if (!player) return;
+            const ACTIVE_DISTANCE = 150;
             const playerBox = new THREE.Box3().setFromObject(player);
+
             for (let i = statues.length - 1; i >= 0; i--) {
                 const statue = statues[i];
-                if (statue.userData.isHit) continue;
+                if (statue.userData.isHit || player.position.distanceTo(statue.position) > ACTIVE_DISTANCE) continue;
+
                 const statueBox = new THREE.Box3().setFromObject(statue);
                 if (playerBox.intersectsBox(statueBox)) {
                     statue.userData.isHit = true;
@@ -940,7 +954,8 @@
             }
             for (let i = streetLights.length - 1; i >= 0; i--) {
                 const light = streetLights[i];
-                if (light.userData.isHit) continue;
+                 if (light.userData.isHit || player.position.distanceTo(light.position) > ACTIVE_DISTANCE) continue;
+
                 const lightBox = new THREE.Box3().setFromObject(light.children[0]);
                 lightBox.expandByVector(new THREE.Vector3(0,4,0));
                 lightBox.applyMatrix4(light.matrixWorld);
@@ -1245,7 +1260,6 @@
                         if (now - lastKeyUpTime < 0.3) { triggerBoost(); }
                     }
                     isAccelerating = true;
-                    if(!hasPlayerMoved) hasPlayerMoved = true;
                 }
                 if(e.code === 'ArrowDown') isBraking = true; 
                 if(e.code === 'ArrowLeft') isTurningLeft = true; 
@@ -1264,8 +1278,7 @@
             document.addEventListener('keyup', onKeyUp);
 
             const handleAccelStart = () => {
-                isAccelerating = true; 
-                if(!hasPlayerMoved) hasPlayerMoved = true;
+                isAccelerating = true;
                 if (!clock) return; 
                 const now = clock.getElapsedTime();
                 if (now - lastAccelTapTime < 0.3) { triggerBoost(); } 
@@ -1574,7 +1587,7 @@
             const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, trunkHeight, 8);
             const trunkMat = new THREE.MeshToonMaterial({ map: palmTrunkTexture });
             palmTrunkInstance = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
-            palmTrunkInstance.castShadow = true;
+            palmTrunkInstance.castShadow = false;
             
             const leafGeo = new THREE.PlaneGeometry(5, 5);
             const leafMat = new THREE.MeshToonMaterial({ 
@@ -1584,7 +1597,7 @@
                 alphaTest: 0.5
             });
             palmLeafInstance = new THREE.InstancedMesh(leafGeo, leafMat, count * 10);
-            palmLeafInstance.castShadow = true;
+            palmLeafInstance.castShadow = false;
 
             const dummy = new THREE.Object3D();
             for (let i = 0; i < count; i++) {
@@ -1793,118 +1806,50 @@
             const deltaTime = clock.getDelta();
 
             if (!hasPlayerMoved) {
-                // Oyuncu "Oyuna Başla" diyene kadar bekle
+                updateDayCycle(deltaTime);
+                const time = clock.getElapsedTime();
+                updateOcean(time);
                 renderer.render(scene, camera);
                 return;
             }
 
-            const topSpeed = 6.5;
-            if (isRadioPlaying && sounds.radio && sounds.engine) {
-                const normalizedSpeed = Math.min(speed / topSpeed, 1.0);
-                const targetRadioVol = RADIO_VOL_MAX - (normalizedSpeed * (RADIO_VOL_MAX - RADIO_VOL_MIN));
-                const targetEngineVol = ENGINE_VOL_MIN + (normalizedSpeed * (ENGINE_VOL_MAX - ENGINE_VOL_MIN));
-                sounds.radio.volume(THREE.MathUtils.lerp(sounds.radio.volume(), targetRadioVol, 0.05));
-                sounds.engine.volume(THREE.MathUtils.lerp(sounds.engine.volume(), targetEngineVol, 0.05));
-            }
-            if (policeDisableTimer > 0) policeDisableTimer -= deltaTime;
-            if(hasPlayerMoved) gameTime += deltaTime;
-            
-            if (areHazardLightsOn && hasPlayerMoved) {
-                areHazardLightsOn = false;
-            }
-            if (!areHazardLightsOn && player && player.userData.lights) {
-                 const isNight = dayCyclePhases[currentCycleTime / phaseDuration | 0] === 'NIGHT' || dayCyclePhases[currentCycleTime / phaseDuration | 0] === 'EVENING';
-                 player.userData.lights.headlight1.visible = isNight;
-                 player.userData.lights.headlight2.visible = isNight;
-            } else if (areHazardLightsOn) {
-                 if(player && player.userData.lights) Object.values(player.userData.lights).forEach(light => {
-                    if (light.isMesh) {
-                        light.visible = Math.sin(clock.getElapsedTime() * 8) > 0;
-                    } else if (light instanceof THREE.PointLight) {
-                        light.intensity = Math.sin(clock.getElapsedTime() * 8) > 0 ? 1.5 : 0;
-                    }
-                });
-            }
-
-
-            if (policeSpawnTimer > 0) { policeSpawnTimer -= deltaTime; if (policeSpawnTimer <= 0) { createPoliceCar(); startGame(); } }
-            if (hasPlayerMoved && !isBoosting) { if (cleanDrivingTime < BOOST_CHARGE_TIME) cleanDrivingTime += deltaTime; else if (!isBoostAvailable) { isBoostAvailable = true; updateBoostUI(); } }
-            if (isBoosting) { boostTimeRemaining -= deltaTime; if (boostTimeRemaining <= 0) isBoosting = false; }
-            if (hasPlayerMoved && wantedLevel > 0 && gameTime > nextChatterTime) { generateRadioChatter(); nextChatterTime = gameTime + CHATTER_INTERVAL + Math.random() * 10; }
-            
-            if (hasPlayerMoved && gameTime > nextMissionPromptTime) {
-                const missionContainer = document.getElementById('mission-container');
-                if (missionContainer && !missionContainer.classList.contains('visible')) {
-                    if (missionHideTimeout) clearTimeout(missionHideTimeout);
-                    document.getElementById('mission-text').innerText = "Yeni bir gorev almak icin dugmeye bas!";
-                    document.getElementById('generate-mission-btn').disabled = false;
-                    document.getElementById('generate-mission-btn').innerHTML = '✨ Yeni Gorev Al';
-                    missionContainer.style.display = 'flex';
-                    setTimeout(() => missionContainer.classList.add('visible'), 10);
-                    missionHideTimeout = setTimeout(() => {
-                        missionContainer.classList.remove('visible');
-                        missionContainer.addEventListener('transitionend', () => {
-                            if (!missionContainer.classList.contains('visible')) { missionContainer.style.display = 'none'; }
-                        }, { once: true });
-                    }, 3000);
-                }
-                nextMissionPromptTime = gameTime + MISSION_PROMPT_INTERVAL + Math.random() * 15;
-            }
-
-            if (player.userData.isJumping) {
-                player.position.y += player.userData.verticalVelocity * deltaTime;
-                player.userData.verticalVelocity -= 15 * deltaTime;
-                if (player.position.y <= 0.7) { 
-                    player.position.y = 0.7; 
-                    player.userData.isJumping = false;
-                    player.userData.verticalVelocity = 0;
-                    shakeCamera(0.2);
-                }
-            }
-
-            trafficCars.forEach(car => {
-                if (car.userData.type === 'ambulance' && !car.userData.healedPlayer) {
-                    const distance = player.position.distanceTo(car.position);
-                    const proximityThreshold = 15;
-                    if (distance < proximityThreshold) {
-                        playerHealth = Math.min(100, playerHealth + 10);
-                        car.userData.healedPlayer = true;
-                        updateHealth();
-                        showSpeechBubble('player', '+10 Can!');
-                        if (sounds.heal_sound) sounds.heal_sound.play();
-                    }
-                }
-            });
-
-            updateDayCycle(deltaTime);
-            if (canBeCaught && !isGameOver && clock.getElapsedTime() > nextSpeechBubbleTime) {
-                if (Math.random() < 0.5) { showSpeechBubble('police'); } else { showSpeechBubble('player'); }
-                nextSpeechBubbleTime = clock.getElapsedTime() + SPEECH_BUBBLE_INTERVAL + (Math.random() * 4 - 2);
-            }
-            if (wantedLevel > 0 && wantedLevelCooldown > 0) { wantedLevelCooldown -= deltaTime; if (wantedLevelCooldown <= 0) { wantedLevel--; updateStarsUI(); if (wantedLevel > 0) wantedLevelCooldown = 5; } }
-            
-            updatePlayerMovement(); updatePoliceAI(deltaTime); checkPoliceCollisions();
+            updatePlayerMovement(); 
+            updatePoliceAI(deltaTime); 
+            checkPoliceCollisions();
             checkRampJumps();
-            if (!player.userData.isJumping) {
-                checkDestructibleCollisions();
-                checkCollisions();
-            }
+            checkDestructibleCollisions();
+            checkCollisions();
             updateTraffic(deltaTime); 
             updatePoliceShooting(deltaTime); 
-            updateDebris(deltaTime); updateBulletSparks(deltaTime); if (isRaining) updateRain(deltaTime);
+            updateDebris(deltaTime); 
+            updateBulletSparks(deltaTime); 
+            if (isRaining) updateRain(deltaTime);
             updateFallingObjects(deltaTime); 
             updateCamera(); 
             moveWorld(); 
             updatePedestrians();
             updateFlyingDebris(deltaTime);
+            updateDayCycle(deltaTime);
 
             const time = clock.getElapsedTime();
             updateOcean(time);
+            
+            if(areHazardLightsOn){
+                if(player && player.userData.lights) Object.values(player.userData.lights).forEach(light => {
+                    if (light.isMesh) {
+                        light.visible = Math.sin(clock.getElapsedTime() * 8) > 0;
+                    }
+                });
+            }
+
             if (policeCar && sirenLightRed) sirenLightRed.material.emissiveIntensity = Math.sin(time * 5) > 0 ? 1.0 : 0.0; 
             if (policeCar && sirenLightBlue) sirenLightBlue.material.emissiveIntensity = Math.sin(time * 5) < 0 ? 1.0 : 0.0; 
-            score += speed; document.getElementById('score').innerText = `SKOR: ${Math.floor(score)}`;
+            
+            score += speed; 
+            document.getElementById('score').innerText = `SKOR: ${Math.floor(score)}`;
             
             if (!policeCar && wantedLevel > 0 && hasPlayerMoved && !isGameOver) { createPoliceCar(); }
+            
             renderer.render(scene, camera);
         }
         
