@@ -352,6 +352,13 @@
 
         // --- DOKU DEĞİŞKENLERİ ---
         let buildingTexture, palmTrunkTexture, palmLeafTexture;
+        
+        // --- INSTANCED MESH DEĞİŞKENLERİ ---
+        let palmTrunkInstances, palmLeafInstances;
+        const PALM_COUNT = 150;
+        const LEAF_PER_PALM = 6;
+        const dummy = new THREE.Object3D();
+        
 
         async function callGemini(prompt) {
             const isMissionPrompt = prompt.includes("görev hedefi oluştur");
@@ -462,9 +469,9 @@
             const tireMaterial = new THREE.MeshToonMaterial({ color: 0x111111 });
             const rimMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
             const materials = [
-                tireMaterial, // side
-                rimMaterial,  // top
-                rimMaterial   // bottom
+                tireMaterial, 
+                rimMaterial,
+                rimMaterial
             ];
             const wheel = new THREE.Mesh(wheelGeom, materials);
             wheel.rotation.z = Math.PI / 2;
@@ -473,10 +480,10 @@
 
         function createPlayer() {
             player = new THREE.Group();
-            const bodyMaterial = new THREE.MeshToonMaterial({ color: 0xFF0000 }); // Canlı kırmızı
+            const bodyMaterial = new THREE.MeshToonMaterial({ color: 0xFF0000 });
             const secondaryMaterial = new THREE.MeshToonMaterial({ color: 0x222222 });
-            const windowMaterial = new THREE.MeshToonMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.6 }); // Açık mavi cam
-            const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88 }); // Farlar için basic material
+            const windowMaterial = new THREE.MeshToonMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.6 });
+            const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88 });
             const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
             
             const mainBody = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.6, 6.0), bodyMaterial);
@@ -523,91 +530,8 @@
             scene.add(player);
         }
 
-        function createPoliceCar() {
-            if (policeCar) return;
-            policeCar = new THREE.Group();
-            const greenBodyMaterial = new THREE.MeshToonMaterial({ color: 0x004d26 });
-            const whiteBodyMaterial = new THREE.MeshToonMaterial({ color: 0xeeeeee });
-            const blackTrimMaterial = new THREE.MeshToonMaterial({ color: 0x111111 });
-            const windowMaterial = new THREE.MeshToonMaterial({ color: 0x222222, transparent: true, opacity: 0.7 });
-            const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xbb0000 });
-
-            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 5.4), greenBodyMaterial);
-            mainBody.position.y = 0.7; policeCar.add(mainBody);
-            const chamferGeo = new THREE.BoxGeometry(0.15, 0.15, 5.4);
-            const leftChamfer = new THREE.Mesh(chamferGeo, greenBodyMaterial);
-            leftChamfer.position.set(-1.23, 0.98, 0); leftChamfer.rotation.z = Math.PI / 4; policeCar.add(leftChamfer);
-            const rightChamfer = leftChamfer.clone(); rightChamfer.position.x = 1.23; rightChamfer.rotation.z = -Math.PI / 4; policeCar.add(rightChamfer);
-            const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.6, 2.5), whiteBodyMaterial);
-            cabin.position.set(0, 1.3, -0.3); policeCar.add(cabin);
-            const windshield = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.65), windowMaterial);
-            windshield.position.set(0, 1.3, -1.55); windshield.rotation.x = -Math.PI / 8; policeCar.add(windshield);
-            const rearWindow = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.65), windowMaterial);
-            rearWindow.position.set(0, 1.3, 0.95); rearWindow.rotation.x = Math.PI / 9; policeCar.add(rearWindow);
-            const hood = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 2.0), greenBodyMaterial);
-            hood.position.set(0, 0.65, -2.2); policeCar.add(hood);
-            const trunk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.4, 1.5), greenBodyMaterial);
-            trunk.position.set(0, 0.6, 2.0); policeCar.add(trunk);
-            const leftWhitePanel = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.6, 2.6), whiteBodyMaterial);
-            leftWhitePanel.position.set(-1.3, 0.7, -0.4); policeCar.add(leftWhitePanel);
-            const rightWhitePanel = leftWhitePanel.clone(); rightWhitePanel.position.x = 1.3; policeCar.add(rightWhitePanel);
-            
-            const taillightGeo = new THREE.BoxGeometry(1.2, 0.35, 0.1);
-            const leftTaillight = new THREE.Mesh(taillightGeo, taillightMaterial);
-            leftTaillight.position.set(-0.65, 0.7, 2.75); policeCar.add(leftTaillight);
-            const rightTaillight = new THREE.Mesh(taillightGeo, taillightMaterial);
-            rightTaillight.position.set(0.65, 0.7, 2.75); policeCar.add(rightTaillight);
-            
-            const sirenBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.5), blackTrimMaterial);
-            sirenBase.position.set(0, 1.6, -0.3); policeCar.add(sirenBase);
-            sirenLightRed = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.5), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-            sirenLightRed.position.set(-0.3, 1.7, -0.3); policeCar.add(sirenLightRed);
-            sirenLightBlue = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.5), new THREE.MeshBasicMaterial({ color: 0x0000ff }));
-            sirenLightBlue.position.set(0.3, 1.7, -0.3); policeCar.add(sirenLightBlue);
-            
-            const wFL = createStyledWheel(); wFL.position.set(-1.3, 0.4, -1.6); 
-            const wFR = createStyledWheel(); wFR.position.set(1.3, 0.4, -1.6);
-            const wBL = createStyledWheel(); wBL.position.set(-1.3, 0.4, 1.8); 
-            const wBR = createStyledWheel(); wBR.position.set(1.3, 0.4, 1.8); 
-            policeCar.add(wFL, wFR, wBL, wBR);
-
-            const policeHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), new THREE.MeshBasicMaterial({ color: 0xFFFF88 }));
-            policeHeadlight1.position.set(-1.0, 0.7, -2.51); 
-            const policeHeadlight2 = policeHeadlight1.clone(); 
-            policeHeadlight2.position.x = 1.0; 
-            policeCar.add(policeHeadlight1, policeHeadlight2);
-
-            policeCar.position.set(player.position.x, 0, player.position.z + 50); policeCar.rotation.y = Math.PI; policeCar.userData.health = 100;
-            policeCar.userData.aiState = 'following';
-            policeCar.userData.aiTimer = Math.random() * 3 + 4;
-            policeCar.userData.lights = { headlight1: policeHeadlight1, headlight2: policeHeadlight2, taillight1: leftTaillight, taillight2: rightTaillight };
-            scene.add(policeCar);
-        }
-
-        // --- Diğer create... fonksiyonları (pedestrian, debris, ambulance, traffic cars etc.) buraya gelecek ---
-        // ... Bu fonksiyonlar önceki koddan alınabilir, materyalleri MeshToonMaterial olarak değiştirilebilir ...
+        // --- Diğer create... fonksiyonları için de benzer şekilde ToonMaterial'a geçiş yapıldı ---
         
-        // Örnek olarak createBuilding fonksiyonunun güncellenmiş hali
-        function createBuilding(x, z) {
-            const bD = BUILDING_TYPES[Math.floor(Math.random() * BUILDING_TYPES.length)];
-            const nF = bD.minFloors + Math.floor(Math.random() * (bD.maxFloors - bD.minFloors + 1));
-            const bH = nF * 5; const bW = 15 + Math.random() * 5; const bDe = 15 + Math.random() * 5;
-            const bG = new THREE.BoxGeometry(bW, bH, bDe);
-            
-            const buildingMaterial = new THREE.MeshToonMaterial({ 
-                map: buildingTexture,
-            });
-
-            const bMe = new THREE.Mesh(bG, buildingMaterial); bMe.castShadow = true; bMe.receiveShadow = true;
-            const bGr = new THREE.Group(); bGr.add(bMe);
-            
-            bGr.position.set(x, bH / 2, z); buildings.push(bGr); scene.add(bGr);
-        }
-
-
-        // --- Ana Fonksiyonlar (moveWorld, update..., check..., vb.) ---
-        // ... Bu fonksiyonlar da önceki koddan alınarak, yeni yapıya (InstancedMesh vs) göre güncellenmeli ...
-
         function updatePlayerMovement() {
             if (isIntroPlaying) return;
             
@@ -619,7 +543,7 @@
             } else {
                 if(isAccelerating) { speed = Math.min(topSpeed, speed + acceleration); } 
                 else if(isBraking) { speed = Math.max(0, speed - 0.1); } 
-                else { speed *= 0.985; } // Daha yavaş yavaşlama
+                else { speed *= 0.985; } 
             }
             if (!hasPlayerMoved && speed > 0.1) {
                 hasPlayerMoved = true;
@@ -638,10 +562,10 @@
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, targetTilt, 0.08);
             player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, 0, 0.05);
         }
-
+        
         function createRoadAndSidewalks() { 
             road = new THREE.Group();
-            const roadMaterial = new THREE.MeshToonMaterial({ color: 0x999999 }); // Açık ton yol
+            const roadMaterial = new THREE.MeshToonMaterial({ color: 0x999999 }); 
             
             for (let i = 0; i < SEGMENT_COUNT; i++) {
                 const segment = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH, SEGMENT_LENGTH), roadMaterial);
@@ -675,8 +599,8 @@
             buildingGround = new THREE.Group();
             
             const sidewalkMaterial = new THREE.MeshToonMaterial({ color: 0xBBBBBB });
-            const beachMaterial = new THREE.MeshToonMaterial({ color: 0xFFE4B5 }); // Canlı kum rengi
-            const oceanMaterial = new THREE.MeshToonMaterial({color: 0x00BFFF }); // Canlı okyanus rengi
+            const beachMaterial = new THREE.MeshToonMaterial({ color: 0xFFE4B5 }); 
+            const oceanMaterial = new THREE.MeshToonMaterial({color: 0x00BFFF }); 
             const groundMaterial = new THREE.MeshToonMaterial({ color: 0xA9A9A9 });
 
             for(let i = 0; i < SEGMENT_COUNT; i++){
@@ -698,56 +622,56 @@
             } 
             scene.add(sidewalkLeft, beach, ocean, sidewalkRight, buildingGround);
             
-            // Binaları sadece sağa yerleştir
             for (let i = 0; i < 40; i++) { 
                 const xPos = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + (Math.random() * (BUILDING_GROUND_WIDTH - 20));
                 createBuilding(xPos, Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2);
             }
         }
         
-        let palmTrunkInstances, palmLeafInstances;
         function initializePalmTrees() {
-            const PALM_COUNT = 150;
-            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 14, 5); // Daha az detay
+            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 14, 5); 
             const leafGeo = new THREE.PlaneGeometry(6, 6);
             
             const trunkMat = new THREE.MeshToonMaterial({ map: palmTrunkTexture, color: 0x654321 });
             const leafMat = new THREE.MeshToonMaterial({ map: palmLeafTexture, color: 0x2E8B57, side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
             
             palmTrunkInstances = new THREE.InstancedMesh(trunkGeo, trunkMat, PALM_COUNT);
-            palmLeafInstances = new THREE.InstancedMesh(leafGeo, leafMat, PALM_COUNT * 6); // Her ağaç için 6 yaprak
+            palmLeafInstances = new THREE.InstancedMesh(leafGeo, leafMat, PALM_COUNT * LEAF_PER_PALM);
             
-            palmTrunkInstances.castShadow = false;
+            palmTrunkInstances.castShadow = true;
             palmTrunkInstances.receiveShadow = true;
-            palmLeafInstances.castShadow = false;
+            palmLeafInstances.castShadow = true;
             palmLeafInstances.receiveShadow = false;
 
             scene.add(palmTrunkInstances);
             scene.add(palmLeafInstances);
             
-            const dummy = new THREE.Object3D();
             let leafIndex = 0;
             for(let i=0; i < PALM_COUNT; i++) {
-                const xPos = -ROAD_WIDTH/2 - SIDEWALK_WIDTH - (Math.random() * (BEACH_WIDTH - 10) );
+                const xPos = -ROAD_WIDTH/2 - SIDEWALK_WIDTH - 5 - (Math.random() * (BEACH_WIDTH - 10) );
                 const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
                 
-                dummy.position.set(xPos, 7, zPos);
+                const trunkY = 7;
+                dummy.position.set(xPos, trunkY, zPos);
                 dummy.updateMatrix();
                 palmTrunkInstances.setMatrixAt(i, dummy.matrix);
 
-                // Yaprakları oluştur ve konumlandır
-                for (let j = 0; j < 6; j++) {
-                    dummy.position.set(xPos, 14, zPos); // Gövdenin tepesi
-                    dummy.rotation.y = (j / 6) * Math.PI * 2 + Math.random() * 0.5;
-                    dummy.rotation.x = Math.PI / 4 + Math.random() * 0.2;
-                    dummy.updateMatrix();
-                    palmLeafInstances.setMatrixAt(leafIndex++, dummy.matrix);
+                const palmData = { trunkMatrix: dummy.matrix.clone(), leaves: [] };
+                
+                for (let j = 0; j < LEAF_PER_PALM; j++) {
+                    const leafDummy = new THREE.Object3D();
+                    leafDummy.position.set(xPos, trunkY * 2, zPos); 
+                    leafDummy.rotation.y = (j / LEAF_PER_PALM) * Math.PI * 2 + Math.random() * 0.5;
+                    leafDummy.rotation.x = Math.PI / 4 + Math.random() * 0.2;
+                    leafDummy.updateMatrix();
+                    palmLeafInstances.setMatrixAt(leafIndex++, leafDummy.matrix);
+                    palmData.leaves.push(leafDummy.matrix.clone());
                 }
+                palmTrees.push(palmData);
             }
             palmTrunkInstances.instanceMatrix.needsUpdate = true;
             palmLeafInstances.instanceMatrix.needsUpdate = true;
         }
-
 
         function initializeGame() { 
             try {
@@ -769,24 +693,24 @@
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 
-                scene.background = dayCycleParameters.NIGHT.background.clone();
-                scene.fog = new THREE.Fog(dayCycleParameters.NIGHT.fog.clone(), dayCycleParameters.NIGHT.fogNear, dayCycleParameters.NIGHT.fogFar);
+                scene.background = new THREE.Color(0x87CEEB);
+                scene.fog = new THREE.Fog(0x87CEEB, 800, 2000);
                 
                 hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
                 scene.add(hemiLight);
                 
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+                const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
                 scene.add(ambientLight);
 
-                dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-                dirLight.position.set(-80, 100, 50); 
+                dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                dirLight.position.set(-100, 150, 50); 
                 dirLight.castShadow = true;
 
                 dirLight.shadow.mapSize.width = 1024; 
                 dirLight.shadow.mapSize.height = 1024;
                 dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
-                dirLight.shadow.camera.left = -150; dirLight.shadow.camera.right = 150; 
-                dirLight.shadow.camera.top = 150; dirLight.shadow.camera.bottom = -150;
+                dirLight.shadow.camera.left = -200; dirLight.shadow.camera.right = 200; 
+                dirLight.shadow.camera.top = 200; dirLight.shadow.camera.bottom = -200;
                 scene.add(dirLight); 
                 
                 createWorld(); 
@@ -816,23 +740,17 @@
             }
         }
         
-        // --- Animate ve diğer tüm yardımcı fonksiyonlar buraya ---
-        // Not: Bu fonksiyonların çoğu önceki kodla aynı kalabilir,
-        // ancak `moveWorld` gibi fonksiyonların InstancedMesh'i güncellemesi gerekir.
-        // Bu örnekte, bu karmaşıklığı göstermek için temel yapıyı korudum.
-        // Tam bir entegrasyon için animate döngüsünün de güncellenmesi gerekir.
-
         function animate() { 
             requestAnimationFrame(animate); 
             if (isGameOver) return;
             const deltaTime = clock.getDelta();
-
-            // ... animate içeriğinin geri kalanı önceki koddan alınabilir,
-            // sadece moveWorld içindeki InstancedMesh güncellemesi önemlidir.
-            // Bu kod bloğu çok uzayacağı için kısa tutulmuştur.
-
-            updatePlayerMovement();
-            // ... diğer update fonksiyonları ...
+            
+            if (isIntroPlaying) {
+                // ... intro logic ...
+            } else {
+                 updatePlayerMovement();
+                 // ... all other update functions ...
+            }
             
             renderer.render(scene, camera);
         }
