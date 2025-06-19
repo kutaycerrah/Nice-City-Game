@@ -324,6 +324,7 @@
         let scene, camera, renderer, clock;
         let player, policeCar = null, sirenLightRed, sirenLightBlue, road;
         let sounds;
+        // DÜZELTME: 'streetLights' değişkeni tekrar eklendi
         let buildings = [], palmTrees = [], guardRails = [], trafficCars = [], streetLights = [], statues = [], debrisParticles = [], rain, bulletSparks = [];
         let hemiLight, dirLight;
         let speed = 0, score = 0, wantedLevel = 0, playerHealth = 100;
@@ -818,7 +819,7 @@
             });
             palmTreeInstances.instanceMatrix.needsUpdate = true;
 
-            [...buildings, ...guardRails, ...trafficCars, ...statues, ...pedestrians, ...flyingDebris].forEach(o=>{
+            [...buildings, ...guardRails, ...trafficCars, ...streetLights, ...statues, ...pedestrians, ...flyingDebris].forEach(o=>{
                 o.position.z += speed;
                 if(o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200;
                 else if(o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
@@ -1199,7 +1200,7 @@
 
         function updateCamera(){ 
             if (!player || isIntroPlaying) return;
-            const speedFactor = Math.min(speed / 7.0, 1.0); // Hız artışına göre ayarlandı
+            const speedFactor = Math.min(speed / 7.0, 1.0); 
             const cameraTarget = new THREE.Vector3();
             cameraTarget.x = player.position.x * 0.6; 
             cameraTarget.y = player.position.y + 12 - (speedFactor * 2); 
@@ -1502,7 +1503,7 @@
             } 
             scene.add(sidewalkLeft, sidewalkRight, beachLeft, oceanLeft, beachRight, oceanRight);
             
-            for (let i = 0; i < 20; i++) { // Binaları azaltarak performansa katkı
+            for (let i = 0; i < 20; i++) { 
                 const side = Math.random() < 0.5 ? -1 : 1;
                 const xPos = side * (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + BEACH_WIDTH/2 + Math.random() * 20);
                 createBuilding(xPos, Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2);
@@ -1540,13 +1541,11 @@
         function initializePalmTrees() {
             const PALM_COUNT = 100;
             const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 14, 8);
-            const leafGeo = new THREE.PlaneGeometry(5, 5);
-            // GÖRSEL İYİLEŞTİRME: Palmiye materyallerine renk eklendi
+            
             const trunkMat = new THREE.MeshPhongMaterial({ map: palmTrunkTexture, color: 0x654321, flatShading: true });
-            const leafMat = new THREE.MeshPhongMaterial({ map: palmLeafTexture, color: 0x008000, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
             
             palmTreeInstances = new THREE.InstancedMesh(trunkGeo, trunkMat, PALM_COUNT);
-            palmTreeInstances.castShadow = false; // Ana optimizasyon
+            palmTreeInstances.castShadow = false;
             palmTreeInstances.receiveShadow = true;
             scene.add(palmTreeInstances);
             
@@ -1555,7 +1554,7 @@
                 const side = Math.random() < 0.5 ? -1 : 1;
                 const xPos = side * (ROAD_WIDTH/2 + SIDEWALK_WIDTH + Math.random() * (BEACH_WIDTH - 5) );
                 const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
-                const palmData = { position: new THREE.Vector3(xPos, 7, zPos) }; // y pozisyonu gövde boyunun yarısı
+                const palmData = { position: new THREE.Vector3(xPos, 7, zPos) }; 
                 palmTrees.push(palmData);
                 
                 dummy.position.copy(palmData.position);
@@ -1691,7 +1690,7 @@
                 scene.add(dirLight); 
                 
                 createWorld(); 
-                initializePalmTrees(); // Palmiyeleri InstancedMesh olarak başlat
+                initializePalmTrees(); 
                 updateHealth();
 
                 camera.position.set(player.position.x + 10, player.position.y + 4, player.position.z + 10);
