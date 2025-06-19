@@ -305,16 +305,6 @@
         const NEON_COLORS = [0xff00ff, 0x00ffff, 0x54fcfd, 0xf72119, 0x00ff7f, 0xff89f3];
         const WINDOW_LIGHT_COLORS = [0xffffee, 0xffd8b1, 0xcce4ff];
         const TRAFFIC_CAR_COLORS = [0xAAAAAA, 0xDDDDDD, 0x333333, 0x800000, 0x003300, 0xC0C0C0, 0xFF0000, 0x00FF00, 0x0000FF, 0xFFA500, 0x800080, 0x008080, 0xFF4500, 0xDA70D6, 0x4B0082, 0xADFF2F, 0x00FFFF];
-        const dayCycleParameters = {
-            NIGHT:     { background: new THREE.Color(0x1a2a4a), fog: new THREE.Color(0x3a4a6a), hemiSky: new THREE.Color(0xcceeff), hemiGround: new THREE.Color(0x556688), dirLight: new THREE.Color(0xffffff), dirIntensity: 0.6, fogNear: 500, fogFar: 2500 },
-            MORNING:   { background: new THREE.Color(0xf7b267), fog: new THREE.Color(0xe5989b), hemiSky: new THREE.Color(0xf7b267), hemiGround: new THREE.Color(0xc06c84), dirLight: new THREE.Color(0xffaa00), dirIntensity: 0.8, fogNear: 450, fogFar: 2000 },
-            PRE_NOON:  { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xa0dae9), hemiSky: new THREE.Color(0xadd8e6), hemiGround: new THREE.Color(0xa9a9a9), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.0, fogNear: 400, fogFar: 1600 },
-            NOON:      { background: new THREE.Color(0x87ceeb), fog: new THREE.Color(0xa0dae9), hemiSky: new THREE.Color(0xffffff), hemiGround: new THREE.Color(0xcccccc), dirLight: new THREE.Color(0xffffff), dirIntensity: 1.5, fogNear: 350, fogFar: 1500 },
-            AFTERNOON: { background: new THREE.Color(0xa0d8e9), fog: new THREE.Color(0xb0c7db), hemiSky: new THREE.Color(0xf5f5dc), hemiGround: new THREE.Color(0xb0c7db), dirLight: new THREE.Color(0xffdd88), dirIntensity: 1.1, fogNear: 400, fogFar: 1800 },
-            EVENING:   { background: new THREE.Color(0xff4e50), fog: new THREE.Color(0xff8c42), hemiSky: new THREE.Color(0xff6f61), hemiGround: new THREE.Color(0x6b5b95), dirLight: new THREE.Color(0xff6600), dirIntensity: 0.9, fogNear: 480, fogFar: 2200 }
-        };
-        const dayCyclePhases = ['NIGHT', 'MORNING', 'PRE_NOON', 'NOON', 'AFTERNOON', 'EVENING'];
-        const dayCycleTime = 120; const phaseDuration = dayCycleTime / dayCyclePhases.length; let currentCycleTime = 0;
         
         // --- SES SABİTLERİ ---
         const MENU_VOLUME = 0.6; const RADIO_VOL_MAX = 0.6; const RADIO_VOL_MIN = 0.3;
@@ -530,37 +520,209 @@
             scene.add(player);
         }
 
-        // --- Diğer create... fonksiyonları için de benzer şekilde ToonMaterial'a geçiş yapıldı ---
+        function createPoliceCar() {
+            if (policeCar) return;
+            policeCar = new THREE.Group();
+            const greenBodyMaterial = new THREE.MeshToonMaterial({ color: 0x004d26 });
+            const whiteBodyMaterial = new THREE.MeshToonMaterial({ color: 0xeeeeee });
+            const blackTrimMaterial = new THREE.MeshToonMaterial({ color: 0x111111 });
+            const windowMaterial = new THREE.MeshToonMaterial({ color: 0x222222, transparent: true, opacity: 0.7 });
+            const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xbb0000 });
+
+            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 5.4), greenBodyMaterial);
+            mainBody.position.y = 0.7; policeCar.add(mainBody);
+            const chamferGeo = new THREE.BoxGeometry(0.15, 0.15, 5.4);
+            const leftChamfer = new THREE.Mesh(chamferGeo, greenBodyMaterial);
+            leftChamfer.position.set(-1.23, 0.98, 0); leftChamfer.rotation.z = Math.PI / 4; policeCar.add(leftChamfer);
+            const rightChamfer = leftChamfer.clone(); rightChamfer.position.x = 1.23; rightChamfer.rotation.z = -Math.PI / 4; policeCar.add(rightChamfer);
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.6, 2.5), whiteBodyMaterial);
+            cabin.position.set(0, 1.3, -0.3); policeCar.add(cabin);
+            const windshield = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.65), windowMaterial);
+            windshield.position.set(0, 1.3, -1.55); windshield.rotation.x = -Math.PI / 8; policeCar.add(windshield);
+            const rearWindow = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.65), windowMaterial);
+            rearWindow.position.set(0, 1.3, 0.95); rearWindow.rotation.x = Math.PI / 9; policeCar.add(rearWindow);
+            const hood = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.5, 2.0), greenBodyMaterial);
+            hood.position.set(0, 0.65, -2.2); policeCar.add(hood);
+            const trunk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.4, 1.5), greenBodyMaterial);
+            trunk.position.set(0, 0.6, 2.0); policeCar.add(trunk);
+            const leftWhitePanel = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.6, 2.6), whiteBodyMaterial);
+            leftWhitePanel.position.set(-1.3, 0.7, -0.4); policeCar.add(leftWhitePanel);
+            const rightWhitePanel = leftWhitePanel.clone(); rightWhitePanel.position.x = 1.3; policeCar.add(rightWhitePanel);
+            
+            const taillightGeo = new THREE.BoxGeometry(1.2, 0.35, 0.1);
+            const leftTaillight = new THREE.Mesh(taillightGeo, taillightMaterial);
+            leftTaillight.position.set(-0.65, 0.7, 2.75); policeCar.add(leftTaillight);
+            const rightTaillight = new THREE.Mesh(taillightGeo, taillightMaterial);
+            rightTaillight.position.set(0.65, 0.7, 2.75); policeCar.add(rightTaillight);
+            
+            const sirenBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.5), blackTrimMaterial);
+            sirenBase.position.set(0, 1.6, -0.3); policeCar.add(sirenBase);
+            sirenLightRed = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.5), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+            sirenLightRed.position.set(-0.3, 1.7, -0.3); policeCar.add(sirenLightRed);
+            sirenLightBlue = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.5), new THREE.MeshBasicMaterial({ color: 0x0000ff }));
+            sirenLightBlue.position.set(0.3, 1.7, -0.3); policeCar.add(sirenLightBlue);
+            
+            const wFL = createStyledWheel(); wFL.position.set(-1.3, 0.4, -1.6); 
+            const wFR = createStyledWheel(); wFR.position.set(1.3, 0.4, -1.6);
+            const wBL = createStyledWheel(); wBL.position.set(-1.3, 0.4, 1.8); 
+            const wBR = createStyledWheel(); wBR.position.set(1.3, 0.4, 1.8); 
+            policeCar.add(wFL, wFR, wBL, wBR);
+
+            const policeHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), new THREE.MeshBasicMaterial({ color: 0xFFFF88 }));
+            policeHeadlight1.position.set(-1.0, 0.7, -2.51); 
+            const policeHeadlight2 = policeHeadlight1.clone(); 
+            policeHeadlight2.position.x = 1.0; 
+            policeCar.add(policeHeadlight1, policeHeadlight2);
+
+            policeCar.position.set(player.position.x, 0, player.position.z + 50); policeCar.rotation.y = Math.PI; policeCar.userData.health = 100;
+            policeCar.userData.aiState = 'following';
+            policeCar.userData.aiTimer = Math.random() * 3 + 4;
+            policeCar.userData.lights = { headlight1: policeHeadlight1, headlight2: policeHeadlight2, taillight1: leftTaillight, taillight2: rightTaillight };
+            scene.add(policeCar);
+        }
+
+        function createPedestrianTexture(config) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = config.skinColor;
+            ctx.fillRect(22, 0, 20, 20);
+            ctx.fillRect(12, 20, 40, 50);
+            ctx.fillRect(12, 70, 18, 58);
+            ctx.fillRect(34, 70, 18, 58);
+            ctx.fillStyle = '#222';
+            ctx.fillRect(22, 0, 20, 8);
+            ctx.fillStyle = new THREE.Color(config.shirtColor).getStyle();
+            ctx.fillRect(12, 22, 40, 35);
+            ctx.fillStyle = new THREE.Color(config.pantsColor).getStyle();
+            ctx.fillRect(12, 70, 40, 40);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createPedestrian() {
+            const config = {
+                skinColor: PEDESTRIAN_SKIN_COLORS[Math.floor(Math.random() * PEDESTRIAN_SKIN_COLORS.length)],
+                shirtColor: PEDESTRIAN_SHIRT_COLORS[Math.floor(Math.random() * PEDESTRIAN_SHIRT_COLORS.length)],
+                pantsColor: PEDESTRIAN_PANTS_COLORS[Math.floor(Math.random() * PEDESTRIAN_PANTS_COLORS.length)]
+            };
+
+            const texture = createPedestrianTexture(config);
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+
+            const geometry = new THREE.PlaneGeometry(1.2, 2.4);
+            const pedestrian = new THREE.Mesh(geometry, material);
+
+            pedestrian.position.y = 1.2;
+            return pedestrian;
+        }
+
+        function createFlyingDebris() {
+            const debrisMaterial = new THREE.MeshBasicMaterial({
+                color: 0xcccccc,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8
+            });
+            const debrisGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+            const debris = new THREE.Mesh(debrisGeometry, debrisMaterial);
+
+            debris.userData.velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.1,
+                Math.random() * 0.05 + 0.02,
+                (Math.random() - 0.5) * 0.1
+            );
+            debris.userData.rotationSpeed = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.1,
+                (Math.random() - 0.5) * 0.1,
+                (Math.random() - 0.5) * 0.1
+            );
+            return debris;
+        }
+       
+        function createBuilding(x, z) {
+            const bD = BUILDING_TYPES[Math.floor(Math.random() * BUILDING_TYPES.length)];
+            const nF = bD.minFloors + Math.floor(Math.random() * (bD.maxFloors - bD.minFloors + 1));
+            const bH = nF * 5; const bW = 15 + Math.random() * 5; const bDe = 15 + Math.random() * 5;
+            const bG = new THREE.BoxGeometry(bW, bH, bDe);
+            
+            const buildingMaterial = new THREE.MeshToonMaterial({ 
+                map: buildingTexture,
+            });
+
+            const bMe = new THREE.Mesh(bG, buildingMaterial); bMe.castShadow = true; bMe.receiveShadow = true;
+            const bGr = new THREE.Group(); bGr.add(bMe);
+            
+            bGr.position.set(x, bH / 2, z); buildings.push(bGr); scene.add(bGr);
+        }
+
+        function moveWorld() {
+            let palmIndex = 0;
+            let leafIndex = 0;
+
+            palmTrees.forEach((palmData) => {
+                const trunkMatrix = palmTrunkInstances.getMatrixAt(palmIndex, new THREE.Matrix4());
+                const position = new THREE.Vector3();
+                position.setFromMatrixPosition(trunkMatrix);
+
+                position.z += speed;
+
+                if (position.z > player.position.z + 200) {
+                    position.z -= TOTAL_LENGTH + Math.random() * 200;
+                } else if (position.z < player.position.z - TOTAL_LENGTH - 100) {
+                    position.z += TOTAL_LENGTH + Math.random() * 200;
+                }
+                
+                dummy.position.copy(position);
+                dummy.updateMatrix();
+                palmTrunkInstances.setMatrixAt(palmIndex, dummy.matrix);
+
+                for (let j = 0; j < LEAF_PER_PALM; j++) {
+                    const leafDummy = new THREE.Object3D();
+                    leafDummy.position.set(position.x, 14, position.z); // gövdenin tepesi
+                    leafDummy.rotation.y = (j / LEAF_PER_PALM) * Math.PI * 2 + Math.random() * 0.5;
+                    leafDummy.rotation.x = Math.PI / 4 + Math.random() * 0.2;
+                    leafDummy.updateMatrix();
+                    palmLeafInstances.setMatrixAt(leafIndex++, leafDummy.matrix);
+                }
+                palmIndex++;
+            });
+
+            palmTrunkInstances.instanceMatrix.needsUpdate = true;
+            palmLeafInstances.instanceMatrix.needsUpdate = true;
+
+            const otherObjects = [...buildings, ...trafficCars, ...streetLights, ...statues, ...pedestrians, ...flyingDebris];
+            otherObjects.forEach(o => {
+                o.position.z += speed;
+                if (o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200;
+                else if (o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
+            });
+
+            const groundObjects = [road, sidewalkLeft, sidewalkRight, beach, ocean, buildingGround];
+            groundObjects.forEach(group => {
+                if (group) group.children.forEach(c => { 
+                    c.position.z += speed; 
+                    if(c.position.z > player.position.z + SEGMENT_LENGTH/2) c.position.z -= SEGMENT_COUNT * SEGMENT_LENGTH; 
+                });
+            });
+        }
         
-        function updatePlayerMovement() {
-            if (isIntroPlaying) return;
-            
-            const topSpeed = 7.5; 
-            const acceleration = 0.15;
-            if (isBoosting) {
-                const boostTargetSpeed = topSpeed * BOOST_SPEED_MULTIPLIER;
-                speed = Math.min(boostTargetSpeed, speed + 0.25);
-            } else {
-                if(isAccelerating) { speed = Math.min(topSpeed, speed + acceleration); } 
-                else if(isBraking) { speed = Math.max(0, speed - 0.1); } 
-                else { speed *= 0.985; } 
-            }
-            if (!hasPlayerMoved && speed > 0.1) {
-                hasPlayerMoved = true;
-                areHazardLightsOn = false;
-                policeSpawnTimer = 10;
-            }
-            const turnSpeed = speed > 0.5 ? 0.35 : 0;
-            const limitLeft = -ROAD_WIDTH / 2 - SIDEWALK_WIDTH - BEACH_WIDTH + 15;
-            const limitRight = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + BUILDING_GROUND_WIDTH - 15;
-            if(isTurningLeft) player.position.x = Math.max(limitLeft, player.position.x - turnSpeed);
-            if(isTurningRight) player.position.x = Math.min(limitRight, player.position.x + turnSpeed);
-            
-            let targetTilt = 0;
-            if (isTurningLeft) targetTilt = 0.1;
-            else if (isTurningRight) targetTilt = -0.1;
-            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, targetTilt, 0.08);
-            player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, 0, 0.05);
+        function updateCamera() { 
+            if (!player || isIntroPlaying) return;
+            const speedFactor = Math.min(speed / 7.5, 1.0); 
+            const cameraTarget = new THREE.Vector3();
+            cameraTarget.x = player.position.x * 0.6; 
+            cameraTarget.y = player.position.y + 12 - (speedFactor * 2); 
+            cameraTarget.z = player.position.z + 25 - (speedFactor * 5);
+            camera.position.lerp(cameraTarget, 0.08); 
+            const lookAtTarget = new THREE.Vector3(player.position.x, player.position.y + 2.0, player.position.z);
+            camera.lookAt(lookAtTarget);
         }
         
         function createRoadAndSidewalks() { 
@@ -622,9 +784,31 @@
             } 
             scene.add(sidewalkLeft, beach, ocean, sidewalkRight, buildingGround);
             
+            // Binaları sadece sağa yerleştir
             for (let i = 0; i < 40; i++) { 
                 const xPos = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + (Math.random() * (BUILDING_GROUND_WIDTH - 20));
                 createBuilding(xPos, Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2);
+            }
+
+            for (let i = 0; i < 20; i++) {
+                const statue = new THREE.Group();
+                const baseGeo = new THREE.CylinderGeometry(1, 1, 0.5, 8);
+                const baseMat = new THREE.MeshToonMaterial({ color: 0x999999 });
+                const base = new THREE.Mesh(baseGeo, baseMat);
+                statue.add(base);
+                const bodyGeo = new THREE.BoxGeometry(1, 4, 1);
+                const bodyMat = new THREE.MeshToonMaterial({ color: 0xAAAAAA });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.position.y = 2.25;
+                statue.add(body);
+                statue.castShadow = true;
+                
+                const side = Math.random() < 0.5 ? 1 : -1;
+                const xPos = side * (ROAD_WIDTH / 2 + 1.5);
+                const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
+                statue.position.set(xPos, 0.25, zPos);
+                statues.push(statue);
+                scene.add(statue);
             }
         }
         
@@ -641,23 +825,23 @@
             palmTrunkInstances.castShadow = true;
             palmTrunkInstances.receiveShadow = true;
             palmLeafInstances.castShadow = true;
-            palmLeafInstances.receiveShadow = false;
 
             scene.add(palmTrunkInstances);
             scene.add(palmLeafInstances);
             
             let leafIndex = 0;
             for(let i=0; i < PALM_COUNT; i++) {
-                const xPos = -ROAD_WIDTH/2 - SIDEWALK_WIDTH - 5 - (Math.random() * (BEACH_WIDTH - 10) );
+                const xPos = -ROAD_WIDTH/2 - SIDEWALK_WIDTH - 5 - (Math.random() * (BEACH_WIDTH - 10));
                 const zPos = Math.random() * TOTAL_LENGTH - TOTAL_LENGTH / 2;
                 
                 const trunkY = 7;
-                dummy.position.set(xPos, trunkY, zPos);
+                const palmData = { position: new THREE.Vector3(xPos, trunkY, zPos) };
+                palmTrees.push(palmData);
+
+                dummy.position.copy(palmData.position);
                 dummy.updateMatrix();
                 palmTrunkInstances.setMatrixAt(i, dummy.matrix);
 
-                const palmData = { trunkMatrix: dummy.matrix.clone(), leaves: [] };
-                
                 for (let j = 0; j < LEAF_PER_PALM; j++) {
                     const leafDummy = new THREE.Object3D();
                     leafDummy.position.set(xPos, trunkY * 2, zPos); 
@@ -665,14 +849,14 @@
                     leafDummy.rotation.x = Math.PI / 4 + Math.random() * 0.2;
                     leafDummy.updateMatrix();
                     palmLeafInstances.setMatrixAt(leafIndex++, leafDummy.matrix);
-                    palmData.leaves.push(leafDummy.matrix.clone());
                 }
-                palmTrees.push(palmData);
             }
             palmTrunkInstances.instanceMatrix.needsUpdate = true;
             palmLeafInstances.instanceMatrix.needsUpdate = true;
         }
 
+        // --- Diğer tüm fonksiyonlar buraya ---
+        
         function initializeGame() { 
             try {
                 const textureLoader = new THREE.TextureLoader();
@@ -689,6 +873,7 @@
                 renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
                 renderer.setSize(window.innerWidth, window.innerHeight); 
                 renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -744,13 +929,40 @@
             requestAnimationFrame(animate); 
             if (isGameOver) return;
             const deltaTime = clock.getDelta();
-            
+
             if (isIntroPlaying) {
-                // ... intro logic ...
-            } else {
-                 updatePlayerMovement();
-                 // ... all other update functions ...
+                cinematicCameraTarget.set(player.position.x * 0.6, player.position.y + 12, player.position.z + 25);
+                camera.position.lerp(cinematicCameraTarget, deltaTime * 0.6);
+                const lookAtTarget = new THREE.Vector3(player.position.x, player.position.y + 2.0, player.position.z);
+                camera.lookAt(lookAtTarget);
+                if (camera.position.distanceTo(cinematicCameraTarget) < 1.0) {
+                    isIntroPlaying = false;
+                    document.getElementById('ui-container').classList.add('visible');
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('mobile-controls').classList.add('visible');
+                    }
+                }
+                renderer.render(scene, camera);
+                return;
             }
+
+            const topSpeed = 7.5;
+            if (isRadioPlaying && sounds.radio && sounds.engine) {
+                const normalizedSpeed = Math.min(speed / topSpeed, 1.0);
+                const targetRadioVol = RADIO_VOL_MAX - (normalizedSpeed * (RADIO_VOL_MAX - RADIO_VOL_MIN));
+                const targetEngineVol = ENGINE_VOL_MIN + (normalizedSpeed * (ENGINE_VOL_MAX - ENGINE_VOL_MIN));
+                sounds.radio.volume(THREE.MathUtils.lerp(sounds.radio.volume(), targetRadioVol, 0.05));
+                sounds.engine.volume(THREE.MathUtils.lerp(sounds.engine.volume(), targetEngineVol, 0.05));
+            }
+            if (policeDisableTimer > 0) policeDisableTimer -= deltaTime;
+            if (hasPlayerMoved) gameTime += deltaTime;
+            if (policeSpawnTimer > 0) { policeSpawnTimer -= deltaTime; if (policeSpawnTimer <= 0) { createPoliceCar(); startGame(); } }
+            if (hasPlayerMoved && !isBoosting) { if (cleanDrivingTime < BOOST_CHARGE_TIME) cleanDrivingTime += deltaTime; else if (!isBoostAvailable) { isBoostAvailable = true; updateBoostUI(); } }
+            if (isBoosting) { boostTimeRemaining -= deltaTime; if (boostTimeRemaining <= 0) isBoosting = false; }
+            
+            updatePlayerMovement();
+            moveWorld();
+            updateCamera();
             
             renderer.render(scene, camera);
         }
