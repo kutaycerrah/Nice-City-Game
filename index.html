@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="//cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
-    
     <title>Grand Traffic Racer - Vice City Pursuit</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -358,7 +355,8 @@
 
         async function callGemini(prompt) {
             const isMissionPrompt = prompt.includes("görev hedefi oluştur");
-            const apiKey = "";
+            // *** DÜZELTME NOTU: Gemini özelliği için buraya kendi API anahtarınızı eklemeniz gerekir. ***
+            const apiKey = ""; // <--- BURAYA KENDİ GOOGLE AI API ANAHTARINIZI GİRİN
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
 
@@ -463,7 +461,8 @@
         function createStyledWheel() {
             const wheelGeom = new THREE.CylinderGeometry(0.5, 0.5, 0.5, 24);
             const tireMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
-            const rimMaterial = new THREE.MeshBasicMaterial({ map: wheelTexture });
+            // *** DÜZELTME: Tekerlek kaplaması (whell.jpg) eksik olduğu için basit bir renk atandı. ***
+            const rimMaterial = new THREE.MeshBasicMaterial({ color: 0x999999 });
             const materials = [
                 tireMaterial, // side
                 rimMaterial,  // top
@@ -479,8 +478,9 @@
             const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xD40000, flatShading: true });
             const secondaryMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, flatShading: true });
             const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, transparent: true, opacity: 0.8, flatShading: true });
-            const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.5 });
-            const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.8 });
+            // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+            const lightMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.5 });
+            const taillightMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.8 });
             
             const mainBody = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.6, 6.0), bodyMaterial);
             mainBody.position.y = 0.6; mainBody.castShadow = true; player.add(mainBody);
@@ -533,7 +533,8 @@
             const whiteBodyMaterial = new THREE.MeshPhongMaterial({ color: 0xeeeeee, flatShading: true });
             const blackTrimMaterial = new THREE.MeshPhongMaterial({ color: 0x111111, flatShading: true });
             const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, transparent: true, opacity: 0.7 });
-            const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xbb0000, emissive: 0xbb0000, emissiveIntensity: 1.5 });
+            // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+            const taillightMaterial = new THREE.MeshStandardMaterial({ color: 0xbb0000, emissive: 0xbb0000, emissiveIntensity: 1.5 });
 
             const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 5.4), greenBodyMaterial);
             mainBody.position.y = 0.7; policeCar.add(mainBody);
@@ -575,7 +576,8 @@
             const wBR = createStyledWheel(); wBR.position.set(1.3, 0.4, 1.8); 
             policeCar.add(wFL, wFR, wBL, wBR);
 
-            const policeHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 }));
+            // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+            const policeHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), new THREE.MeshStandardMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 }));
             policeHeadlight1.position.set(-1.0, 0.7, -2.51); 
             const policeHeadlight2 = policeHeadlight1.clone(); 
             policeHeadlight2.position.x = 1.0; 
@@ -658,8 +660,9 @@
             const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, flatShading: true });
             const stripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, flatShading: true });
             const windowMaterial = new THREE.MeshPhongMaterial({ color: 0x333333, transparent: true, opacity: 0.8, flatShading: true });
-            const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
-            const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
+            // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+            const headlightMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
+            const taillightMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
 
             const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 6.5), bodyMaterial);
             mainBody.position.y = 1.6 / 2 + 0.1;
@@ -776,7 +779,9 @@
             const bGr = new THREE.Group(); bGr.add(bMe);
             if (Math.random() < 0.3) {
                 const neonWidth = bW * (0.5 + Math.random() * 0.3); const neonHeight = bH * (0.05 + Math.random() * 0.1); const neonColor = NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)];
-                const nG = new THREE.BoxGeometry(neonWidth, neonHeight, 0.5); const nM = new THREE.MeshBasicMaterial({ color: neonColor, emissive: neonColor, emissiveIntensity: 1.0 });
+                const nG = new THREE.BoxGeometry(neonWidth, neonHeight, 0.5); 
+                // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+                const nM = new THREE.MeshStandardMaterial({ color: neonColor, emissive: neonColor, emissiveIntensity: 1.0 });
                 const n = new THREE.Mesh(nG, nM); n.position.set(0, Math.random() * (bH/2) - (bH/4), bDe/2 + 0.25); bGr.add(n);
                 const pL = new THREE.PointLight(neonColor, 2, 40); pL.position.copy(n.position); bGr.add(pL);
             }
@@ -784,13 +789,15 @@
             if(isTallBuilding) {
                 if (Math.random() < 0.5) {
                     const neonHeight = bH * (0.3 + Math.random() * 0.5); const neonColor = NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)];
-                    const nG = new THREE.BoxGeometry(0.5, neonHeight, 0.5); const nM = new THREE.MeshBasicMaterial({ color: neonColor, emissive: neonColor, emissiveIntensity: 1.0 });
+                    const nG = new THREE.BoxGeometry(0.5, neonHeight, 0.5); const nM = new THREE.MeshStandardMaterial({ color: neonColor, emissive: neonColor, emissiveIntensity: 1.0 });
                     const n = new THREE.Mesh(nG, nM); const side = Math.random() < 0.5 ? -1 : 1; n.position.set((bW / 2 + 0.25) * side, 0, bDe / 2 - 1); bGr.add(n);
                 }
                 const windowGeo = new THREE.BoxGeometry(1.2, 2.2, 0.1);
                 for(let i = 0; i < nF * 2; i++) { 
                     if (Math.random() < 0.4) { 
-                        const lightColor = WINDOW_LIGHT_COLORS[Math.floor(Math.random() * WINDOW_LIGHT_COLORS.length)]; const windowMat = new THREE.MeshBasicMaterial({color: lightColor, emissive: lightColor, emissiveIntensity: 0.5});
+                        const lightColor = WINDOW_LIGHT_COLORS[Math.floor(Math.random() * WINDOW_LIGHT_COLORS.length)]; 
+                        // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+                        const windowMat = new THREE.MeshStandardMaterial({color: lightColor, emissive: lightColor, emissiveIntensity: 0.5});
                         const windowMesh = new THREE.Mesh(windowGeo, windowMat);
                         const floor = Math.floor(Math.random() * nF); const yPos = (floor * 5) - (bH/2) + 2.5;
                         if(Math.random() < 0.6) { const xPos = Math.random() * (bW - 2) - (bW/2 - 1); windowMesh.position.set(xPos, yPos, bDe/2 + 0.05); } 
@@ -997,8 +1004,9 @@
             }
             const lanes = [-ROAD_WIDTH / 3, 0, ROAD_WIDTH / 3]; vehicle.position.x = lanes[Math.floor(Math.random() * lanes.length)];
             vehicle.position.z = player.position.z - 300 - Math.random() * 400;
-            const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
-            const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
+            // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+            const headlightMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF88, emissive: 0xFFFF88, emissiveIntensity: 1.0 });
+            const taillightMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000, emissive: 0xFF0000, emissiveIntensity: 1.0 });
 
             if (!vehicle.userData.lights) {
                 const trafficHeadlight1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.1), headlightMaterial);
@@ -1444,13 +1452,11 @@
 
         function createRoadAndSidewalks() { 
             road = new THREE.Group();
+            // *** DÜZELTME: Yol kaplaması (yol_boş.jpg) eksik olduğu için basit bir renk atandı. ***
             const roadMaterial = new THREE.MeshPhongMaterial({ 
-                map: roadTexture,
+                color: 0x444444,
                 shininess: 20 
             });
-            roadTexture.wrapS = THREE.RepeatWrapping;
-            roadTexture.wrapT = THREE.RepeatWrapping;
-            roadTexture.repeat.set(16, 16);
             
             for (let i = 0; i < SEGMENT_COUNT; i++) {
                 const segment = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH, SEGMENT_LENGTH), roadMaterial);
@@ -1464,15 +1470,11 @@
             sidewalkLeft = new THREE.Group(); sidewalkRight = new THREE.Group(); beach = new THREE.Group(); 
             ocean = new THREE.Group(); buildingGround = new THREE.Group();
             
-            const sidewalkMaterial = new THREE.MeshPhongMaterial({ map: sidewalkTexture });
-            sidewalkTexture.wrapS = THREE.RepeatWrapping;
-            sidewalkTexture.wrapT = THREE.RepeatWrapping;
-            sidewalkTexture.repeat.set(10, 200);
+            // *** DÜZELTME: Kaldırım kaplaması (kaldırım.jpg) eksik olduğu için basit bir renk atandı. ***
+            const sidewalkMaterial = new THREE.MeshPhongMaterial({ color: 0xAAAAAA });
 
-            const beachMaterial = new THREE.MeshPhongMaterial({ map: beachTexture });
-            beachTexture.wrapS = THREE.RepeatWrapping;
-            beachTexture.wrapT = THREE.RepeatWrapping;
-            beachTexture.repeat.set(12, 12);
+            // *** DÜZELTME: Plaj kaplaması (plaj.jpg) eksik olduğu için basit bir renk atandı. ***
+            const beachMaterial = new THREE.MeshPhongMaterial({ color: 0xD2B48C });
             
             const oceanMaterial = new THREE.MeshPhongMaterial({color:0x0066cc, transparent:true, opacity:0.8});
             
@@ -1552,7 +1554,8 @@
 
         function createStreetLights() {
             const poleMaterial = new THREE.MeshPhongMaterial({ color: 0x444444 });
-            const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700, emissive: 0xffd700, emissiveIntensity: 1.0 });
+            // *** DÜZELTME: MeshBasicMaterial, MeshStandardMaterial olarak değiştirildi. ***
+            const bulbMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffd700, emissiveIntensity: 1.0 });
             const spacing = 150;
             for (let i = 0; i < TOTAL_LENGTH / spacing; i++) {
                 [-1, 1].forEach(side => {
@@ -1640,13 +1643,11 @@
         function initializeGame() { 
             try {
                 const textureLoader = new THREE.TextureLoader();
+                // *** DÜZELTME: Eksik veya yanlış uzantılı kaplamalar düzeltildi. ***
                 buildingTexture = textureLoader.load('bina_apt.png');
-                palmTrunkTexture = textureLoader.load('palm_texture.jpg');
-                roadTexture = textureLoader.load('yol_boş.jpg');
-                wheelTexture = textureLoader.load('whell.jpg');
-                palmLeafTexture = textureLoader.load('palm_tree.jpg');
-                beachTexture = textureLoader.load('plaj.jpg');
-                sidewalkTexture = textureLoader.load('kaldırım.jpg');
+                palmTrunkTexture = textureLoader.load('palm_texture.png'); // .jpg -> .png olarak düzeltildi
+                palmLeafTexture = textureLoader.load('palm_tree.png');     // .jpg -> .png olarak düzeltildi
+                // Eksik olan kaplamalar (yol, tekerlek, plaj, kaldırım) koddan geçici olarak kaldırıldı ve yerlerine basit renkler atandı.
 
                 clock = new THREE.Clock(); scene = new THREE.Scene();
                 
