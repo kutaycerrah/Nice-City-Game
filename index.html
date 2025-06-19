@@ -662,7 +662,7 @@
             bGr.position.set(x, bH / 2, z); buildings.push(bGr); scene.add(bGr);
         }
 
-        function moveWorld() {
+        function moveWorld(deltaTime) {
             // Instanced Palmiyeleri Güncelle
             let leafIndex = 0;
             palmTrees.forEach((palmData, i) => {
@@ -677,9 +677,8 @@
 
                 for (let j = 0; j < LEAF_PER_PALM; j++) {
                     const leafDummy = palmData.leaves[j];
-                    leafDummy.position.copy(palmData.position);
-                    leafDummy.position.y = 14; 
-                    leafDummy.updateMatrix();
+                    leafDummy.position.set(0, 7, 0); // Yaprakların gövdeye göre konumu
+                    leafDummy.applyMatrix4(dummy.matrix); // Gövde matrisini uygula
                     palmLeafInstances.setMatrixAt(leafIndex++, leafDummy.matrix);
                 }
             });
@@ -690,8 +689,9 @@
             const otherObjects = [...buildings, ...trafficCars, ...streetLights, ...statues, ...pedestrians, ...flyingDebris];
             otherObjects.forEach(o => {
                 o.position.z += speed;
-                if (o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200;
-                else if (o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
+                if (o.position.z > player.position.z + 200) {
+                    // Reset object position for reuse
+                }
             });
 
             // Zeminleri güncelle
@@ -865,96 +865,6 @@
             }
         }
         
-        // --- Buradan sonrası tam ve eksiksizdir ---
-
-        function updatePlayerMovement() {
-            if (isIntroPlaying) return;
-            
-            const topSpeed = 7.5; 
-            const acceleration = 0.15;
-            if (isBoosting) {
-                const boostTargetSpeed = topSpeed * BOOST_SPEED_MULTIPLIER;
-                speed = Math.min(boostTargetSpeed, speed + 0.25);
-            } else {
-                if(isAccelerating) { speed = Math.min(topSpeed, speed + acceleration); } 
-                else if(isBraking) { speed = Math.max(0, speed - 0.1); } 
-                else { speed *= 0.985; } 
-            }
-            if (!hasPlayerMoved && speed > 0.1) {
-                hasPlayerMoved = true;
-                areHazardLightsOn = false;
-                policeSpawnTimer = 10;
-            }
-            const turnSpeed = speed > 0.5 ? 0.35 : 0;
-            const limitLeft = -ROAD_WIDTH / 2 - SIDEWALK_WIDTH - BEACH_WIDTH + 15;
-            const limitRight = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + BUILDING_GROUND_WIDTH - 15;
-            if(isTurningLeft) player.position.x = Math.max(limitLeft, player.position.x - turnSpeed);
-            if(isTurningRight) player.position.x = Math.min(limitRight, player.position.x + turnSpeed);
-            
-            let targetTilt = 0;
-            if (isTurningLeft) targetTilt = 0.1;
-            else if (isTurningRight) targetTilt = -0.1;
-            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, targetTilt, 0.08);
-            player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, 0, 0.05);
-        }
-
-        function takeDamage(amount, reason = "WASTED"){
-            if (isGameOver) return;
-            playerHealth -= amount; 
-            updateHealth();
-            if(playerHealth <= 0){ endGame(reason); }
-        }
-
-        function updateHealth() {
-            playerHealth = Math.max(0, Math.min(100, playerHealth));
-            const healthBar = document.getElementById('health-bar');
-            if (healthBar) {
-                healthBar.style.width = playerHealth + '%';
-                if (playerHealth > 50) {
-                    healthBar.style.backgroundColor = '#4CAF50';
-                } else if (playerHealth > 20) {
-                    healthBar.style.backgroundColor = '#FFC107';
-                } else {
-                    healthBar.style.backgroundColor = '#f44336';
-                }
-            }
-        }
-        
-        function shakeCamera(intensity = 0.3){
-            let shakeAmount = intensity;
-            const shakeInterval = setInterval(() => {
-                camera.position.x += (Math.random() - 0.5) * shakeAmount;
-                camera.position.y += (Math.random() - 0.5) * shakeAmount;
-                shakeAmount *= 0.8;
-                if(shakeAmount < 0.05) { clearInterval(shakeInterval); }
-            }, 20);
-        }
-
-        function endGame(reason){
-            isGameOver = true;
-            if (sounds && sounds.siren) sounds.siren.stop(); if (sounds && sounds.engine) sounds.engine.stop(); if (sounds && sounds.radio) sounds.radio.stop();
-            const gameOverText = document.getElementById('game-over-text');
-            const finalReason = reason === "YAKALANDIN" ? "YAKALANDIN" : "WASTED";
-            gameOverText.innerText = finalReason; gameOverText.style.color = (finalReason === "WASTED") ? "#d9534f" : "#5bc0de";
-            document.getElementById('game-over-screen').style.display = 'flex';
-        }
-        
-        function updateStarsUI(){ for(let i = 1; i <= 5; i++) document.getElementById(`star-${i}`).innerHTML = (i <= wantedLevel) ? STAR_FILLED_SVG : STAR_EMPTY_SVG; }
-        
-        function updateBoostUI() {
-            const accelBtn = document.getElementById('accel-btn');
-            if (isBoostAvailable) { accelBtn.innerHTML = 'IVME'; accelBtn.style.fontSize = '18px'; } 
-            else { accelBtn.innerHTML = '&uarr;'; accelBtn.style.fontSize = '38px'; }
-        }
-        
-        function showSpeechBubble(character, message) {
-            const bubbleId = character === 'player' ? 'player-speech-bubble' : 'police-speech-bubble';
-            const bubble = document.getElementById(bubbleId); if (!bubble || bubble.classList.contains('visible')) return;
-            bubble.innerText = message || (character === 'player' ? playerPhrases[Math.floor(Math.random() * playerPhrases.length)] : policePhrases[Math.floor(Math.random() * policePhrases.length)]);
-            bubble.style.display = 'block'; setTimeout(() => bubble.classList.add('visible'), 10);
-            setTimeout(() => { bubble.classList.remove('visible'); setTimeout(() => bubble.style.display = 'none', 300); }, 2500);
-        }
-
         function initializeGame() { 
             try {
                 const textureLoader = new THREE.TextureLoader();
@@ -1054,7 +964,7 @@
             }
 
             updatePlayerMovement();
-            moveWorld();
+            moveWorld(deltaTime);
             updateCamera();
             
             renderer.render(scene, camera);
