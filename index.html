@@ -349,7 +349,6 @@
         const LEAF_PER_PALM = 6;
         const dummy = new THREE.Object3D();
         
-
         async function callGemini(prompt) {
             const isMissionPrompt = prompt.includes("görev hedefi oluştur");
             const apiKey = ""; 
@@ -677,9 +676,13 @@
 
                 for (let j = 0; j < LEAF_PER_PALM; j++) {
                     const leafDummy = palmData.leaves[j];
-                    leafDummy.position.set(0, 7, 0); // Yaprakların gövdeye göre konumu
-                    leafDummy.applyMatrix4(dummy.matrix); // Gövde matrisini uygula
-                    palmLeafInstances.setMatrixAt(leafIndex++, leafDummy.matrix);
+                    
+                    // Önce yaprağın kendi rotasyonunu uygula, sonra gövdenin pozisyonunu ekle
+                    const leafMatrix = new THREE.Matrix4();
+                    leafMatrix.makeRotationFromEuler(leafDummy.rotation); // Yaprağın kendi rotasyonu
+                    leafMatrix.setPosition(palmData.position.x, 14, palmData.position.z); // Gövdenin tepesine taşı
+                    
+                    palmLeafInstances.setMatrixAt(leafIndex++, leafMatrix);
                 }
             });
             palmTrunkInstances.instanceMatrix.needsUpdate = true;
@@ -689,9 +692,8 @@
             const otherObjects = [...buildings, ...trafficCars, ...streetLights, ...statues, ...pedestrians, ...flyingDebris];
             otherObjects.forEach(o => {
                 o.position.z += speed;
-                if (o.position.z > player.position.z + 200) {
-                    // Reset object position for reuse
-                }
+                if (o.position.z > player.position.z + 200) o.position.z -= TOTAL_LENGTH + Math.random() * 200;
+                else if (o.position.z < player.position.z - TOTAL_LENGTH - 100) o.position.z += TOTAL_LENGTH + Math.random() * 200;
             });
 
             // Zeminleri güncelle
@@ -863,6 +865,22 @@
                     scene.add(lightGroup);
                 });
             }
+        }
+
+        function createRain() {
+            const vertices = [];
+            for (let i = 0; i < 15000; i++) {
+                vertices.push(
+                    THREE.MathUtils.randFloatSpread(2000), // x
+                    THREE.MathUtils.randFloat(0, 1000),    // y
+                    THREE.MathUtils.randFloatSpread(2000)  // z
+                );
+            }
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            rain = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.2, transparent: true }));
+            rain.visible = false;
+            scene.add(rain);
         }
         
         function initializeGame() { 
