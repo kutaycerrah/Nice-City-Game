@@ -340,10 +340,6 @@
         const PEDESTRIAN_SHIRT_COLORS = [0x69d2e7, 0xa7dbd8, 0xf38630, 0xfa6900, 0xff4e50, 0xf9d423, 0xf8b195, 0xc06c84, 0xffffff, 0x333333];
         const PEDESTRIAN_PANTS_COLORS = [0x004d80, 0x333333, 'beige', 0x654321, 0x444444];
         let flyingDebris = [];
-        
-        // --- SİNEMATİK DEĞİŞKENLERİ ---
-        let isIntroPlaying = true;
-        let cinematicCameraTarget;
 
         const BOOST_CHARGE_TIME = 20, BOOST_DURATION = 3.5, BOOST_SPEED_MULTIPLIER = 1.6;
         let cleanDrivingTime = 0, isBoostAvailable = false, isBoosting = false, boostTimeRemaining = 0, lastAccelTapTime = 0, policeDisableTimer = 0;
@@ -388,51 +384,55 @@
             }
         }
 
-    function loadSounds() {
-            // <<< DEĞİŞİKLİK: Sesler geçici olarak devre dışı bırakıldı >>>
-            // Bu sayede oyunun 404 hatası veren ses dosyaları yüzünden çökmesi engellenecek.
+        function loadSounds() {
+            // Ses dosyaları yüklenirken 404 hatası alındığı için geçici olarak devre dışı bırakıldı.
+            // Bu dosyaları GitHub deponuzdaki 'sounds' klasörüne yükledikten sonra bu yorum satırlarını kaldırabilirsiniz.
+            sounds = {};
+            /*
+            const soundBasePath = 'https://raw.githubusercontent.com/kutaycerrah/Nice-City-Game/main/sounds/';
             sounds = {
-                // engine: new Howl({ src: ['...'], ... }),
-                // crash: new Howl({ src: ['...'], ... }),
-                // siren: new Howl({ src: ['...'], ... }),
-                // radio: new Howl({ src: ['...'], ... }),
-                // heal_sound: new Howl({ src: ['...'], ... })
+                engine: new Howl({ src: [soundBasePath + 'engine_sound.ogg'], loop: true, volume: ENGINE_VOL_MIN, html5: true }),
+                crash: new Howl({ src: [soundBasePath + 'crash.ogg'], volume: 0.5 }),
+                siren: new Howl({ src: [soundBasePath + 'police_sound.ogg'], loop: true, volume: SIREN_VOLUME }),
+                radio: new Howl({ src: [soundBasePath + 'Vice City Geceleri.mp3'], loop: true, volume: MENU_VOLUME, html5: true }),
+                heal_sound: new Howl({ src: [soundBasePath + 'spell_heal.ogg'], volume: 0.7 })
             };
-            // Boş bir `sounds` objesi oluşturuyoruz ki kodun geri kalanı 'sounds' tanımsız diye hata vermesin.
+            */
         }
         
         function setupGameStart() {
             const startGameButton = document.getElementById('start-game-button');
             const nameEntryScreen = document.getElementById('name-entry-screen');
-            const gameCanvas = document.getElementById('game');
+            const playerNameInput = document.getElementById('player-name-input');
             
             const startTheGame = () => {
                 if (isRadioPlaying && sounds?.radio) {
                     sounds.radio.fade(MENU_VOLUME, RADIO_VOL_MAX, 1000);
                 }
-                nameEntryScreen.classList.remove('visible');
                 
-                nameEntryScreen.addEventListener('transitionend', () => {
-                     nameEntryScreen.style.display = 'none';
-                     gameCanvas.style.display = 'block';
-                     setTimeout(() => {
-                        isIntroPlaying = false; // Kick off the main game logic
-                        document.getElementById('ui-container').classList.add('visible');
-                        if (window.innerWidth <= 768) {
-                            document.getElementById('mobile-controls').classList.add('visible');
-                        }
-                     }, 500);
-                }, { once: true });
+                nameEntryScreen.style.display = 'none';
+                document.getElementById('game').classList.add('visible');
+                document.getElementById('ui-container').classList.add('visible');
+                if (window.innerWidth <= 768) {
+                    document.getElementById('mobile-controls').classList.add('visible');
+                }
+
+                if (sounds?.engine && !sounds.engine.playing()) sounds.engine.play();
+                
+                canBeCaught = false; 
             };
-
+            
             startGameButton.addEventListener('click', startTheGame);
-
-            // Allow starting by pressing Enter key in the input field
-            document.getElementById('player-name-input').addEventListener('keyup', (event) => {
+            playerNameInput.addEventListener('keyup', (event) => {
                 if (event.key === 'Enter') {
                     startTheGame();
                 }
             });
+             playerNameInput.addEventListener('focus', () => {
+                if (!isRadioPlaying && sounds?.radio) {
+                    sounds.radio.play(); isRadioPlaying = true;
+                }
+            }, { once: true });
         }
         
         function onWindowResize() { 
@@ -707,7 +707,7 @@
         }
 
         function updatePlayerMovement() {
-            if (isIntroPlaying) return;
+            if (isGameOver || hasPlayerMoved === false) return; // Oyuna başlayana kadar hareket etme
             const topSpeed = 6.5;
             if (isBoosting) {
                 const boostTargetSpeed = topSpeed * BOOST_SPEED_MULTIPLIER;
@@ -717,11 +717,7 @@
                 else if(isBraking) { speed = Math.max(0, speed - 0.1); } 
                 else { speed *= 0.99; }
             }
-            if (!hasPlayerMoved && speed > 0.1) {
-                hasPlayerMoved = true;
-                areHazardLightsOn = false;
-                policeSpawnTimer = 10;
-            }
+            
             const turnSpeed = speed > 0.5 ? 0.25 : 0;
             const limitLeft = -ROAD_WIDTH / 2 - SIDEWALK_WIDTH + 1.7;
             const limitRight = ROAD_WIDTH / 2 + SIDEWALK_WIDTH - 1.7;
@@ -1203,7 +1199,7 @@
         }
 
         function updateCamera(){ 
-            if (isIntroPlaying) return;
+            if (!player) return;
             const speedFactor = Math.min(speed / 6.5, 1.0); const cameraTarget = new THREE.Vector3();
             cameraTarget.x = player.position.x * 0.6; 
             cameraTarget.y = player.position.y + 12 - (speedFactor * 2); 
@@ -1243,20 +1239,19 @@
             }
             
             const onKeyDown = e => { 
-                if (isIntroPlaying) return;
                 if(e.code === 'ArrowUp') {
                     if(!isAccelerating && clock){
                         const now = clock.getElapsedTime();
                         if (now - lastKeyUpTime < 0.3) { triggerBoost(); }
                     }
                     isAccelerating = true;
+                    if(!hasPlayerMoved) hasPlayerMoved = true;
                 }
                 if(e.code === 'ArrowDown') isBraking = true; 
                 if(e.code === 'ArrowLeft') isTurningLeft = true; 
                 if(e.code === 'ArrowRight') isTurningRight = true; 
             };
             const onKeyUp = e => { 
-                if (isIntroPlaying) return;
                 if(e.code === 'ArrowUp') {
                     isAccelerating = false;
                     if(clock) lastKeyUpTime = clock.getElapsedTime();
@@ -1269,19 +1264,21 @@
             document.addEventListener('keyup', onKeyUp);
 
             const handleAccelStart = () => {
-                if (isIntroPlaying) return;
-                isAccelerating = true; if (!clock) return; const now = clock.getElapsedTime();
+                isAccelerating = true; 
+                if(!hasPlayerMoved) hasPlayerMoved = true;
+                if (!clock) return; 
+                const now = clock.getElapsedTime();
                 if (now - lastAccelTapTime < 0.3) { triggerBoost(); } 
                 lastAccelTapTime = now;
             };
             const handleAccelEnd = () => { 
-                if (isIntroPlaying) return;
-                isAccelerating = false; lastAccelTapTime = clock.getElapsedTime(); 
+                isAccelerating = false; 
+                lastAccelTapTime = clock.getElapsedTime(); 
             };
 
             const addTouchListeners = (element, startCallback, endCallback) => {
-                const onStart = e => { e.preventDefault(); if (isIntroPlaying) return; startCallback(); };
-                const onEnd = e => { e.preventDefault(); if (isIntroPlaying) return; endCallback(); };
+                const onStart = e => { e.preventDefault(); startCallback(); };
+                const onEnd = e => { e.preventDefault(); endCallback(); };
                 element.addEventListener('touchstart', onStart, { passive: false });
                 element.addEventListener('touchend', onEnd);
                 element.addEventListener('mousedown', onStart); 
@@ -1734,7 +1731,7 @@
                     displayError({
                         name: "Texture Load Error",
                         message: `Aşağıdaki dosya yüklenemedi. URL'yi veya dosya adını kontrol edin: ${url}`,
-                        stack: "Lütfen GitHub deponuzdaki dosya adlarının ve yollarının doğru olduğundan emin olun. Büyük/küçük harf ve Türkçe karakterlere dikkat edin."
+                        stack: "Lütfen GitHub deponuzdaki dosya adlarının ve yollarının doğru olduğundan emin olun."
                     });
                 };
 
@@ -1754,9 +1751,7 @@
                 clock = new THREE.Clock(); scene = new THREE.Scene();
                 
                 camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000); 
-                isIntroPlaying = true;
-                cinematicCameraTarget = new THREE.Vector3();
-
+                
                 renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game'), antialias: true }); 
                 renderer.sortObjects = false;
 
@@ -1791,14 +1786,14 @@
                 displayError(e);
             }
         }
-        
+
         function animate() { 
             requestAnimationFrame(animate); 
             if (isGameOver) return;
             const deltaTime = clock.getDelta();
 
-            if (isIntroPlaying) {
-                // Intro cinematic logic can go here if needed, or just render
+            if (!hasPlayerMoved) {
+                // Oyuncu "Oyuna Başla" diyene kadar bekle
                 renderer.render(scene, camera);
                 return;
             }
@@ -1813,13 +1808,25 @@
             }
             if (policeDisableTimer > 0) policeDisableTimer -= deltaTime;
             if(hasPlayerMoved) gameTime += deltaTime;
-            if (areHazardLightsOn) { if(player && player.userData.lights) Object.values(player.userData.lights).forEach(light => {
-                if (light.isMesh) {
-                    light.visible = Math.sin(clock.getElapsedTime() * 8) > 0;
-                } else if (light instanceof THREE.PointLight) {
-                    light.intensity = Math.sin(clock.getElapsedTime() * 8) > 0 ? 1.5 : 0;
-                }
-            }); }
+            
+            if (areHazardLightsOn && hasPlayerMoved) {
+                areHazardLightsOn = false;
+            }
+            if (!areHazardLightsOn && player && player.userData.lights) {
+                 const isNight = dayCyclePhases[currentCycleTime / phaseDuration | 0] === 'NIGHT' || dayCyclePhases[currentCycleTime / phaseDuration | 0] === 'EVENING';
+                 player.userData.lights.headlight1.visible = isNight;
+                 player.userData.lights.headlight2.visible = isNight;
+            } else if (areHazardLightsOn) {
+                 if(player && player.userData.lights) Object.values(player.userData.lights).forEach(light => {
+                    if (light.isMesh) {
+                        light.visible = Math.sin(clock.getElapsedTime() * 8) > 0;
+                    } else if (light instanceof THREE.PointLight) {
+                        light.intensity = Math.sin(clock.getElapsedTime() * 8) > 0 ? 1.5 : 0;
+                    }
+                });
+            }
+
+
             if (policeSpawnTimer > 0) { policeSpawnTimer -= deltaTime; if (policeSpawnTimer <= 0) { createPoliceCar(); startGame(); } }
             if (hasPlayerMoved && !isBoosting) { if (cleanDrivingTime < BOOST_CHARGE_TIME) cleanDrivingTime += deltaTime; else if (!isBoostAvailable) { isBoostAvailable = true; updateBoostUI(); } }
             if (isBoosting) { boostTimeRemaining -= deltaTime; if (boostTimeRemaining <= 0) isBoosting = false; }
@@ -1829,9 +1836,9 @@
                 const missionContainer = document.getElementById('mission-container');
                 if (missionContainer && !missionContainer.classList.contains('visible')) {
                     if (missionHideTimeout) clearTimeout(missionHideTimeout);
-                    document.getElementById('mission-text').innerText = "Yeni bir görev almak için düğmeye bas!";
+                    document.getElementById('mission-text').innerText = "Yeni bir gorev almak icin dugmeye bas!";
                     document.getElementById('generate-mission-btn').disabled = false;
-                    document.getElementById('generate-mission-btn').innerHTML = '✨ Yeni Görev Al';
+                    document.getElementById('generate-mission-btn').innerHTML = '✨ Yeni Gorev Al';
                     missionContainer.style.display = 'flex';
                     setTimeout(() => missionContainer.classList.add('visible'), 10);
                     missionHideTimeout = setTimeout(() => {
@@ -1852,8 +1859,7 @@
                     player.userData.isJumping = false;
                     player.userData.verticalVelocity = 0;
                     shakeCamera(0.2);
-
-                    }
+                }
             }
 
             trafficCars.forEach(car => {
